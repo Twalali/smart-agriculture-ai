@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}Analysis Result — Smart Agriculture AI{% endblock %}
+
+{% block content %}
+<section class="result-section">
+    <div class="result-layout">
+
+        <!-- Left: image -->
+        <div class="result-image-panel">
+            <div class="result-image-wrap">
+                <img src="{{ image_url }}" alt="Submitted crop image" class="result-image" />
+                <div class="result-image-label">Submitted Image</div>
+            </div>
+            <p class="result-filename">{{ filename }}</p>
+
+            {% if not analysis.error %}
+            <div class="crop-meta-card">
+                <div class="crop-meta-row">
+                    <span class="crop-meta-key">Crop</span>
+                    <span class="crop-meta-val">{{ analysis.crop_type }}</span>
+                </div>
+                <div class="crop-meta-row">
+                    <span class="crop-meta-key">Stage</span>
+                    <span class="crop-meta-val">{{ analysis.growth_stage }}</span>
+                </div>
+                <div class="crop-meta-row">
+                    <span class="crop-meta-key">Status</span>
+                    <span class="crop-meta-val status-pill status-pill--{{ analysis.overall_status }}">
+                        {{ analysis.overall_status | replace('_', ' ') | title }}
+                    </span>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Right: analysis data -->
+        <div class="result-data-panel">
+
+            {% if analysis.error %}
+            <div class="result-status-banner result-status-banner--error">
+                <span class="status-dot"></span>
+                <span>Analysis failed</span>
+            </div>
+            <h1 class="result-title">Could Not Analyse Image</h1>
+            <p class="result-intro">{{ analysis.error }}</p>
+
+            {% else %}
+            <div class="result-status-banner result-status-banner--{{ analysis.overall_status }}">
+                <span class="status-dot"></span>
+                <span>Analysis complete &mdash; {{ analysis.overall_status | replace('_', ' ') | title }}</span>
+            </div>
+
+            <h1 class="result-title">Crop Analysis Report</h1>
+            <p class="result-intro">{{ analysis.summary }}</p>
+
+            <!-- Health score -->
+            <div class="health-block">
+                <div class="health-header">
+                    <span class="health-label">Overall Health Score</span>
+                    <span class="health-value health-value--{{ analysis.overall_status }}">{{ analysis.health_score | int }}<span class="health-unit">/100</span></span>
+                </div>
+                <div class="health-bar-track">
+                    <div class="health-bar-fill health-bar-fill--{{ analysis.overall_status }}"
+                         style="width: {{ analysis.health_score }}%"></div>
+                </div>
+            </div>
+
+            <!-- Detections -->
+            {% if analysis.detections %}
+            <div class="detections-block">
+                <p class="block-heading">Detected Issues</p>
+                {% for d in analysis.detections %}
+                <div class="detection-item">
+                    <div class="detection-top">
+                        <span class="detection-name">{{ d.name }}</span>
+                        <span class="severity-pill severity-pill--{{ d.severity }}">{{ d.severity }}</span>
+                        <span class="detection-confidence">{{ (d.confidence * 100) | int }}%</span>
+                    </div>
+                    <div class="detection-conf-bar">
+                        <div class="detection-conf-fill" style="width: {{ (d.confidence * 100) | int }}%"></div>
+                    </div>
+                    <p class="detection-desc">{{ d.description }}</p>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="no-detections">
+                No diseases or deficiencies detected.
+            </div>
+            {% endif %}
+
+            <!-- Recommendations -->
+            {% if analysis.recommendations %}
+            <div class="recommendations-block">
+                <p class="block-heading">Agronomic Recommendations</p>
+                <ol class="rec-list">
+                    {% for rec in analysis.recommendations %}
+                    <li class="rec-item">{{ rec }}</li>
+                    {% endfor %}
+                </ol>
+            </div>
+            {% endif %}
+
+            <!-- Metadata -->
+            <div class="result-meta-grid">
+                <div class="meta-item">
+                    <span class="meta-label">File</span>
+                    <span class="meta-value mono">{{ filename }}</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Engine</span>
+                    <span class="meta-value mono">claude-sonnet-4</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Version</span>
+                    <span class="meta-value mono">v2.0 — AI Active</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Detections</span>
+                    <span class="meta-value">{{ analysis.detections | length }} issue{% if analysis.detections | length != 1 %}s{% endif %} found</span>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="result-actions">
+                <a href="{{ url_for('index') }}" class="btn btn--primary">Analyse Another Crop</a>
+            </div>
+        </div>
+
+    </div>
+</section>
+{% endblock %}
