@@ -106,13 +106,87 @@
         }
     });
 
-    // ---- Submit loading state ----
+    // ---- Submit via AJAX — overlay stays visible with live steps ----
     const uploadForm = document.getElementById("uploadForm");
     if (uploadForm) {
-        uploadForm.addEventListener("submit", function () {
+        uploadForm.addEventListener("submit", function (e) {
+            e.preventDefault(); // stop normal form submit
+
+            if (!fileInput.files || !fileInput.files[0]) return;
+
+            const overlay = document.getElementById("analysisOverlay");
+            const subEl   = document.getElementById("analysisStep");
+
+            const stepEls = ["step1","step2","step3","step4"]
+                .map(function (id) { return document.getElementById(id); });
+
+            function activateStep(i) {
+                stepEls.forEach(function (el, j) {
+                    if (!el) return;
+                    const dot = el.querySelector(".step-dot");
+                    if (!dot) return;
+                    if (j < i) {
+                        dot.classList.remove("step-dot--active");
+                        dot.classList.add("step-dot--done");
+                        el.classList.add("active");
+                    } else if (j === i) {
+                        dot.classList.add("step-dot--active");
+                        el.classList.add("active");
+                    }
+                });
+                const labels = [
+                    "Uploading image...",
+                    "Running AI vision model...",
+                    "Generating recommendations...",
+                    "Preparing report..."
+                ];
+                if (subEl) subEl.textContent = labels[i] || "";
+            }
+
+            // Show overlay
+            if (overlay) overlay.style.display = "flex";
             submitBtn.disabled = true;
-            const label = submitBtn.querySelector(".btn-label");
-            if (label) label.textContent = "Uploading...";
+            activateStep(0);
+
+            // Step 1 → Step 2 after short delay (upload usually fast)
+            const t1 = setTimeout(function () { activateStep(1); }, 1500);
+            const t2 = setTimeout(function () { activateStep(2); }, 5000);
+
+            // Build FormData and POST via AJAX
+            const formData = new FormData();
+            formData.append("crop_image", fileInput.files[0]);
+
+            fetch("/upload/ajax", {
+                method: "POST",
+                body: formData
+            })
+            .then(function (resp) { return resp.json(); })
+            .then(function (data) {
+                clearTimeout(t1);
+                clearTimeout(t2);
+                if (data.error) {
+                    // Hide overlay and show error
+                    if (overlay) overlay.style.display = "none";
+                    submitBtn.disabled = false;
+                    alert("Error: " + data.error);
+                    return;
+                }
+                // Step 3 and 4 briefly before redirect
+                activateStep(2);
+                setTimeout(function () {
+                    activateStep(3);
+                    setTimeout(function () {
+                        window.location.href = data.redirect;
+                    }, 600);
+                }, 600);
+            })
+            .catch(function (err) {
+                clearTimeout(t1);
+                clearTimeout(t2);
+                if (overlay) overlay.style.display = "none";
+                submitBtn.disabled = false;
+                alert("Network error. Please check your connection and try again.");
+            });
         });
     }
 })();
@@ -283,4 +357,26 @@
 
     // On page load — try GPS first, fall back gracefully
     tryGeolocation();
+})();
+
+/* ============================================================
+   Mobile Menu
+   ============================================================ */
+(function () {
+    const btn = document.getElementById("mobileMenuBtn");
+    const nav = document.getElementById("mobileNav");
+    if (!btn || !nav) return;
+
+    btn.addEventListener("click", function () {
+        const open = !nav.hidden;
+        nav.hidden = open;
+        btn.setAttribute("aria-expanded", String(!open));
+    });
+
+    // Close on outside click
+    document.addEventListener("click", function (e) {
+        if (!btn.contains(e.target) && !nav.contains(e.target)) {
+            nav.hidden = true;
+        }
+    });
 })();

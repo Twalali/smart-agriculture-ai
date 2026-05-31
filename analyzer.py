@@ -1,3 +1,10 @@
+"""
+analyzer.py — AI crop analysis via Google Gemini.
+
+Free tier: 15 requests/minute, 1500 requests/day.
+Get your free API key at: https://aistudio.google.com/app/apikey
+"""
+
 import json
 import mimetypes
 import os

@@ -11,20 +11,61 @@
     {% block head %}{% endblock %}
 </head>
 <body>
+    <!-- AI Analysis Loading Overlay — hidden until JS shows it -->
+    <div class="analysis-overlay" id="analysisOverlay" style="display:none">
+        <div class="analysis-overlay-inner">
+            <div class="analysis-spinner">
+                <div class="spinner-ring"></div>
+                <div class="spinner-ring spinner-ring--2"></div>
+                <div class="spinner-ring spinner-ring--3"></div>
+            </div>
+            <p class="analysis-overlay-title">Analysing Your Crop</p>
+            <p class="analysis-overlay-sub" id="analysisStep">Uploading image...</p>
+            <div class="analysis-steps">
+                <div class="analysis-step" id="step1">
+                    <span class="step-dot"></span>
+                    <span>Uploading image</span>
+                </div>
+                <div class="analysis-step" id="step2">
+                    <span class="step-dot"></span>
+                    <span>Running AI vision model</span>
+                </div>
+                <div class="analysis-step" id="step3">
+                    <span class="step-dot"></span>
+                    <span>Generating recommendations</span>
+                </div>
+                <div class="analysis-step" id="step4">
+                    <span class="step-dot"></span>
+                    <span>Preparing report</span>
+                </div>
+            </div>
+        </div>
+    </div>
     <header class="site-header">
         <a href="{{ url_for('index') }}" class="logo">
             <span class="logo-mark">SA</span>
             <div class="logo-text">
-                <span class="logo-primary">Smart Agriculture</span>
-                <span class="logo-tag">AI Platform — v1</span>
+                <span class="logo-primary">Smart Agriculture AI</span>
+                <span class="logo-tag">Burundi Agricultural Platform</span>
             </div>
         </a>
         <nav class="site-nav">
-            <a href="{{ url_for('index') }}" class="nav-link">Analyze Crop</a>
-            <a href="{{ url_for('calendar') }}" class="nav-link">Crop Calendar</a>
+            <a href="{{ url_for('index') }}" class="nav-link {% if request.endpoint == 'index' %}nav-link--active{% endif %}">Analyze Crop</a>
+            <a href="{{ url_for('calendar') }}" class="nav-link {% if request.endpoint == 'calendar' %}nav-link--active{% endif %}">Crop Calendar</a>
+            <a href="{{ url_for('disease_library') }}" class="nav-link {% if request.endpoint == 'disease_library' %}nav-link--active{% endif %}">Disease Library</a>
+            <a href="{{ url_for('about') }}" class="nav-link {% if request.endpoint == 'about' %}nav-link--active{% endif %}">About</a>
             <span class="nav-badge">Beta</span>
         </nav>
+        <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle menu">
+            <span></span><span></span><span></span>
+        </button>
     </header>
+    <div class="mobile-nav" id="mobileNav" hidden>
+        <a href="{{ url_for('index') }}" class="mobile-nav-link">Analyze Crop</a>
+        <a href="{{ url_for('calendar') }}" class="mobile-nav-link">Crop Calendar</a>
+        <a href="{{ url_for('disease_library') }}" class="mobile-nav-link">Disease Library</a>
+        <a href="{{ url_for('about') }}" class="mobile-nav-link">About</a>
+    </div>
 
     <main class="site-main">
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -44,8 +85,38 @@
     </main>
 
     <footer class="site-footer">
-        <p>Smart Agriculture AI &mdash; System Foundation v1.0</p>
-        <p class="footer-note">AI analysis module not yet active. Infrastructure layer only.</p>
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <div class="footer-logo">
+                    <span class="logo-mark logo-mark--sm">SA</span>
+                    <span class="footer-brand-name">Smart Agriculture AI</span>
+                </div>
+                <p class="footer-tagline">Empowering Burundian farmers with artificial intelligence and precision agricultural data.</p>
+            </div>
+            <div class="footer-col">
+                <p class="footer-col-title">Platform</p>
+                <a href="{{ url_for('index') }}" class="footer-link">Crop Analysis</a>
+                <a href="{{ url_for('calendar') }}" class="footer-link">Crop Calendar</a>
+                <a href="{{ url_for('disease_library') }}" class="footer-link">Disease Library</a>
+                <a href="{{ url_for('about') }}" class="footer-link">About</a>
+            </div>
+            <div class="footer-col">
+                <p class="footer-col-title">Crops Supported</p>
+                <span class="footer-text">Common Bean &bull; Maize &bull; Cassava</span>
+                <span class="footer-text">Arabica Coffee &bull; Banana &bull; Rice</span>
+                <span class="footer-text">Sweet Potato &bull; Sorghum</span>
+            </div>
+            <div class="footer-col">
+                <p class="footer-col-title">Seasons</p>
+                <span class="footer-text">Season A: September – January</span>
+                <span class="footer-text">Season B: February – June</span>
+                <span class="footer-text">Data source: ISABU / FAO Burundi</span>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <span>Smart Agriculture AI &mdash; Burundi &copy; 2025</span>
+            <span class="footer-bottom-right">AI Engine: Gemini 2.5 Flash &nbsp;&bull;&nbsp; Platform v4.0</span>
+        </div>
     </footer>
 
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>

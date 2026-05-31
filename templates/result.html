@@ -110,11 +110,11 @@
                 </div>
                 <div class="meta-item">
                     <span class="meta-label">Engine</span>
-                    <span class="meta-value mono">claude-sonnet-4</span>
+                    <span class="meta-value mono">Gemini 2.5 Flash</span>
                 </div>
                 <div class="meta-item">
                     <span class="meta-label">Version</span>
-                    <span class="meta-value mono">v2.0 — AI Active</span>
+                    <span class="meta-value mono">v4.0 — AI Active</span>
                 </div>
                 <div class="meta-item">
                     <span class="meta-label">Detections</span>
@@ -125,6 +125,9 @@
 
             <div class="result-actions">
                 <a href="{{ url_for('index') }}" class="btn btn--primary">Analyse Another Crop</a>
+                {% if not analysis.error %}
+                <button onclick="window.print()" class="btn btn--outline">Download / Print Report</button>
+                {% endif %}
             </div>
         </div>
 
