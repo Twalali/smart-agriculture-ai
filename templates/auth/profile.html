@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Profile — Smart Agriculture AI{% endblock %}
+{% block content %}
+<div class="auth-page">
+    <div class="auth-card auth-card--wide">
+        <div class="auth-card-header">
+            <h1 class="auth-title">Your Profile</h1>
+            <p class="auth-subtitle">
+                <span class="role-pill role-pill--{{ current_user.role }}">{{ current_user.role }}</span>
+                Member since {{ current_user.created_at.strftime('%B %Y') }}
+            </p>
+        </div>
+        <form method="POST" class="auth-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" name="full_name" class="form-input" value="{{ current_user.full_name or '' }}" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Phone</label>
+                    <input type="tel" name="phone" class="form-input" value="{{ current_user.phone or '' }}" />
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Province</label>
+                    <select name="province" class="form-input form-select">
+                        <option value="">Select province...</option>
+                        {% for p in provinces %}
+                        <option value="{{ p }}" {% if current_user.province == p %}selected{% endif %}>{{ p }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Commune</label>
+                    <input type="text" name="commune" class="form-input" value="{{ current_user.commune or '' }}" />
+                </div>
+            </div>
+            <div class="form-divider">Change Password (leave blank to keep current)</div>
+            <div class="form-group">
+                <label class="form-label">New Password</label>
+                <input type="password" name="new_password" class="form-input" placeholder="Min. 6 characters" />
+            </div>
+            <button type="submit" class="btn btn--primary">Save Changes</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

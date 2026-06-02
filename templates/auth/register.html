@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Register — Smart Agriculture AI{% endblock %}
+{% block content %}
+<div class="auth-page">
+    <div class="auth-card auth-card--wide">
+        <div class="auth-card-header">
+            <div class="auth-logo"><span class="logo-mark">SA</span></div>
+            <h1 class="auth-title">Create your account</h1>
+            <p class="auth-subtitle">Join Smart Agriculture AI — free for all Burundian farmers</p>
+        </div>
+        <form method="POST" class="auth-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Username <span class="form-required">*</span></label>
+                    <input type="text" name="username" class="form-input" placeholder="Choose a username" required />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email <span class="form-required">*</span></label>
+                    <input type="email" name="email" class="form-input" placeholder="your@email.com" required />
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Password <span class="form-required">*</span></label>
+                    <input type="password" name="password" class="form-input" placeholder="Min. 6 characters" required />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Confirm Password <span class="form-required">*</span></label>
+                    <input type="password" name="confirm_password" class="form-input" placeholder="Repeat password" required />
+                </div>
+            </div>
+            <div class="form-divider">Farmer Profile (optional but recommended)</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" name="full_name" class="form-input" placeholder="Your full name" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Phone Number</label>
+                    <input type="tel" name="phone" class="form-input" placeholder="+257 ..." />
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Province</label>
+                    <select name="province" class="form-input form-select">
+                        <option value="">Select province...</option>
+                        {% for p in provinces %}
+                        <option value="{{ p }}">{{ p }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Commune</label>
+                    <input type="text" name="commune" class="form-input" placeholder="Your commune" />
+                </div>
+            </div>
+            <button type="submit" class="btn btn--primary btn--full">Create Account</button>
+        </form>
+        <p class="auth-footer-text">
+            Already have an account? <a href="{{ url_for('auth_login') }}">Log in</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

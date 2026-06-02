@@ -380,3 +380,140 @@
         }
     });
 })();
+
+/* ============================================================
+   AI Agronomist Chat
+   ============================================================ */
+
+(function () {
+    const messagesEl = document.getElementById("chatMessages");
+    const inputEl    = document.getElementById("chatInput");
+    const sendBtn    = document.getElementById("chatSendBtn");
+
+    if (!messagesEl || !inputEl) return;
+
+    // Conversation history for context
+    const history = [];
+
+    function scrollToBottom() {
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    function addMessage(role, text) {
+        // Remove suggestions after first user message
+        if (role === "user") {
+            const sugg = document.getElementById("chatSuggestions");
+            if (sugg) sugg.remove();
+        }
+
+        const wrapper = document.createElement("div");
+        wrapper.className = "chat-msg chat-msg--" + role;
+        const bubble = document.createElement("div");
+        bubble.className = "chat-msg-bubble";
+        bubble.textContent = text;
+        wrapper.appendChild(bubble);
+        messagesEl.appendChild(wrapper);
+        scrollToBottom();
+        return bubble;
+    }
+
+    function showTyping() {
+        const wrapper = document.createElement("div");
+        wrapper.className = "chat-msg chat-msg--ai";
+        wrapper.id = "typingIndicator";
+        wrapper.innerHTML =
+            '<div class="chat-typing">' +
+            '<div class="chat-typing-dot"></div>' +
+            '<div class="chat-typing-dot"></div>' +
+            '<div class="chat-typing-dot"></div>' +
+            '</div>';
+        messagesEl.appendChild(wrapper);
+        scrollToBottom();
+    }
+
+    function removeTyping() {
+        const el = document.getElementById("typingIndicator");
+        if (el) el.remove();
+    }
+
+    async function sendMessage(text) {
+        text = text.trim();
+        if (!text) return;
+
+        inputEl.value = "";
+        sendBtn.disabled = true;
+        inputEl.disabled = true;
+
+        addMessage("user", text);
+        history.push({ role: "user", content: text });
+        showTyping();
+
+        try {
+            const resp = await fetch("/api/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    message: text,
+                    context: window.CROP_CONTEXT || {},
+                    history: history.slice(-10),
+                }),
+            });
+            const data = await resp.json();
+            removeTyping();
+
+            if (data.error) {
+                addMessage("ai", "Sorry, I could not answer right now: " + data.error);
+            } else {
+                addMessage("ai", data.reply);
+                history.push({ role: "model", content: data.reply });
+            }
+        } catch (err) {
+            removeTyping();
+            addMessage("ai", "Network error. Please check your connection and try again.");
+        } finally {
+            sendBtn.disabled = false;
+            inputEl.disabled = false;
+            inputEl.focus();
+        }
+    }
+
+    // Send on button click
+    sendBtn.addEventListener("click", function () {
+        sendMessage(inputEl.value);
+    });
+
+    // Send on Enter key
+    inputEl.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage(inputEl.value);
+        }
+    });
+
+    // Global function for suggestion buttons
+    window.askSuggestion = function (btn) {
+        sendMessage(btn.textContent);
+    };
+
+    scrollToBottom();
+})();
+
+/* ============================================================
+   User Menu Dropdown
+   ============================================================ */
+(function () {
+    const btn      = document.getElementById("userMenuBtn");
+    const dropdown = document.getElementById("userDropdown");
+    if (!btn || !dropdown) return;
+
+    btn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        dropdown.hidden = !dropdown.hidden;
+    });
+
+    document.addEventListener("click", function (e) {
+        if (!btn.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.hidden = true;
+        }
+    });
+})();

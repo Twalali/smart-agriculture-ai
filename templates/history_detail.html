@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Analysis Detail — Smart Agriculture AI{% endblock %}
+{% block content %}
+<div class="history-detail-header">
+    <a href="{{ url_for('farm_history') }}" class="back-link">&larr; Back to History</a>
+    <span class="history-detail-date">{{ record.created_at.strftime('%d %B %Y at %H:%M') }}</span>
+</div>
+
+{% include "result.html" %}
+
+{% if chats %}
+<section class="chat-history-section">
+    <p class="block-heading">Saved Conversation</p>
+    <div class="chat-history-list">
+        {% for msg in chats %}
+        <div class="chat-msg chat-msg--{{ msg.role }}">
+            <div class="chat-msg-bubble">{{ msg.content }}</div>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+{% endblock %}

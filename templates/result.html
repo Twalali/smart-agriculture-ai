@@ -133,4 +133,73 @@
 
     </div>
 </section>
+
+{% if not analysis.error %}
+<!-- AI Agronomist Chat -->
+<section class="chat-section">
+    <div class="chat-header">
+        <div class="chat-header-left">
+            <div class="chat-avatar">AI</div>
+            <div>
+                <p class="chat-title">Ask the AI Agronomist</p>
+                <p class="chat-subtitle">Ask anything about your {{ analysis.crop_type }} diagnosis, treatment, or farming advice</p>
+            </div>
+        </div>
+        <span class="chat-status-dot" title="Online"></span>
+    </div>
+
+    <div class="chat-messages" id="chatMessages">
+        <!-- Opening message from AI -->
+        <div class="chat-msg chat-msg--ai">
+            <div class="chat-msg-bubble">
+                I have analysed your <strong>{{ analysis.crop_type }}</strong> crop.
+                Health score is <strong>{{ analysis.health_score | int }}/100</strong>
+                {% if analysis.detections %}
+                and I detected <strong>{{ analysis.detections | length }} issue{% if analysis.detections | length != 1 %}s{% endif %}</strong>
+                including {{ analysis.detections[0].name }}{% if analysis.detections | length > 1 %} and others{% endif %}.
+                {% else %}
+                with no diseases detected.
+                {% endif %}
+                What would you like to know?
+            </div>
+        </div>
+
+        <!-- Quick question suggestions -->
+        <div class="chat-suggestions" id="chatSuggestions">
+            <button class="chat-suggestion-btn" onclick="askSuggestion(this)">How do I treat {{ analysis.detections[0].name if analysis.detections else 'this crop' }}?</button>
+            <button class="chat-suggestion-btn" onclick="askSuggestion(this)">Is it safe to eat affected {{ analysis.crop_type }}?</button>
+            <button class="chat-suggestion-btn" onclick="askSuggestion(this)">How long until harvest?</button>
+            <button class="chat-suggestion-btn" onclick="askSuggestion(this)">What fertilizer should I use?</button>
+            <button class="chat-suggestion-btn" onclick="askSuggestion(this)">How to prevent this next season?</button>
+        </div>
+    </div>
+
+    <div class="chat-input-row">
+        <input
+            type="text"
+            id="chatInput"
+            class="chat-input"
+            placeholder="Ask about your crop diagnosis..."
+            autocomplete="off"
+            maxlength="400"
+        />
+        <button class="chat-send-btn" id="chatSendBtn" onclick="sendChatMessage()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+    </div>
+</section>
+
+<!-- Hidden context passed to JS -->
+<script>
+window.CROP_CONTEXT = {
+    crop_type:      {{ analysis.crop_type | tojson }},
+    growth_stage:   {{ analysis.growth_stage | tojson }},
+    overall_status: {{ analysis.overall_status | tojson }},
+    health_score:   {{ analysis.health_score | int }},
+    summary:        {{ analysis.summary | tojson }},
+    detections:     {{ analysis.detections | map(attribute='name') | list | tojson }},
+    recommendations:{{ analysis.recommendations | tojson }},
+};
+</script>
+{% endif %}
 {% endblock %}

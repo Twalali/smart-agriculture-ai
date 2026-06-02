@@ -54,6 +54,29 @@
             <a href="{{ url_for('calendar') }}" class="nav-link {% if request.endpoint == 'calendar' %}nav-link--active{% endif %}">Crop Calendar</a>
             <a href="{{ url_for('disease_library') }}" class="nav-link {% if request.endpoint == 'disease_library' %}nav-link--active{% endif %}">Disease Library</a>
             <a href="{{ url_for('about') }}" class="nav-link {% if request.endpoint == 'about' %}nav-link--active{% endif %}">About</a>
+            {% if current_user.is_authenticated %}
+                {% if current_user.role in ['admin', 'government'] %}
+                <a href="{{ url_for('admin_dashboard') }}" class="nav-link {% if 'admin' in request.endpoint %}nav-link--active{% endif %}">Dashboard</a>
+                {% endif %}
+                <a href="{{ url_for('farm_history') }}" class="nav-link {% if 'history' in request.endpoint %}nav-link--active{% endif %}">My History</a>
+                <div class="nav-user-menu">
+                    <button class="nav-user-btn" id="userMenuBtn">
+                        <span class="nav-user-avatar">{{ current_user.username[0].upper() }}</span>
+                        <span class="nav-user-name">{{ current_user.username }}</span>
+                    </button>
+                    <div class="nav-user-dropdown" id="userDropdown" hidden>
+                        <div class="dropdown-header">
+                            <span class="dropdown-username">{{ current_user.username }}</span>
+                            <span class="dropdown-role role-pill role-pill--{{ current_user.role }}">{{ current_user.role }}</span>
+                        </div>
+                        <a href="{{ url_for('auth_profile') }}" class="dropdown-item">Edit Profile</a>
+                        <a href="{{ url_for('auth_logout') }}" class="dropdown-item dropdown-item--danger">Log Out</a>
+                    </div>
+                </div>
+            {% else %}
+                <a href="{{ url_for('auth_login') }}" class="btn btn--outline" style="padding:6px 16px;font-size:0.8rem;">Log In</a>
+                <a href="{{ url_for('auth_register') }}" class="btn btn--primary" style="padding:6px 16px;font-size:0.8rem;">Register</a>
+            {% endif %}
             <span class="nav-badge">Beta</span>
         </nav>
         <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle menu">
