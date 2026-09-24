@@ -198,7 +198,7 @@ Voice recognition uses the Web Speech API built into Google Chrome on Android. K
 
 ## Author
 
-Built by **Twalaly** — Systems and Network Administrator, Université Polytechnique de Gitega (USPG), Burundi.
+Built by **Twalaly** — Computer Science student, Burundi.
 
 A portfolio project demonstrating applied AI for civic and agricultural development in East Africa.
 
