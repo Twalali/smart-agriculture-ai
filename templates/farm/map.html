@@ -1,0 +1,479 @@
+{% extends "base.html" %}
+{% block title %}{{ t('map.draw_tab') }} — {{ farm.name }}{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@2.14.2/dist/leaflet-geoman.css"/>
+<style>
+.leaflet-container{background:#1c2416}
+/* Dark popups */
+.leaflet-popup-content-wrapper{background:#1c2416;border:1px solid rgba(140,185,80,0.25);border-radius:8px;box-shadow:0 4px 24px rgba(0,0,0,0.5);color:#dce8cc;padding:0}
+.leaflet-popup-content{margin:12px 14px;line-height:1.5}
+.leaflet-popup-tip{background:#1c2416}
+.leaflet-popup-close-button{color:#7a9460!important}
+.leaflet-popup-close-button:hover{color:#8cb950!important}
+.gps-rec-btn{width:100%;padding:14px;font-size:0.95rem;font-family:var(--font-body);font-weight:500;border-radius:var(--radius-lg);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:all 0.2s}
+.gps-rec-btn--start{background:var(--color-green);color:var(--color-bg)}
+.gps-rec-btn--stop{background:#f87171;color:#fff;animation:pulse-red 1.5s ease-in-out infinite}
+@keyframes pulse-red{0%,100%{box-shadow:0 0 0 0 rgba(248,113,113,0.5)}50%{box-shadow:0 0 0 10px rgba(248,113,113,0)}}
+.profit-positive{color:var(--color-green)}
+.profit-negative{color:#f87171}
+/* NOTE: map height is set in JS (setMapHeights()), not here, to avoid CSS specificity
+   conflicts with inline styles / Leaflet's own injected styles on mobile browsers. */
+#map, #mapGps { width:100%; border-radius:8px; border:1px solid var(--color-border); z-index:1; }
+.leaflet-control-layers, .leaflet-pm-toolbar { font-size:13px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="history-detail-header">
+    <a href="{{ url_for('farm.farm_detail',farm_id=farm.id) }}" class="back-link">&larr; {{ farm.name }}</a>
+    <p style="font-family:var(--font-mono);font-size:0.72rem;color:var(--color-text-faint)" id="screenSizeDebug"></p>
+</div>
+
+<div class="map-method-tabs">
+    <button class="map-method-tab active" onclick="setMethod('geoman',this)">{{ t('map.draw_tab') }}</button>
+    <button class="map-method-tab" onclick="setMethod('gps',this)">{{ t('map.gps_tab') }}</button>
+    <button class="map-method-tab" onclick="setMethod('manual',this)">{{ t('map.manual_tab') }}</button>
+</div>
+
+<div class="map-draw-layout">
+    <div class="map-draw-main">
+
+        <div id="methodGeoman">
+            <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
+                <button type="button" class="btn btn--outline" id="locateMeBtn" style="font-size:0.78rem;padding:7px 16px" onclick="locateMeOnDrawMap()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px;vertical-align:-2px"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4"/></svg>
+                    {{ t('map.find_location') }}
+                </button>
+            </div>
+            <div id="map"></div>
+            <div class="map-draw-hint" id="locateStatusText">{{ t('map.draw_hint')|safe }}</div>
+        </div>
+
+        <div id="methodGps" style="display:none">
+            <div id="mapGps"></div>
+            <div class="map-draw-hint" id="gpsHintText">{{ t('map.start_recording') }}</div>
+        </div>
+
+        <div id="methodManual" style="display:none">
+            <div class="farm-calc-card">
+                <p class="admin-data-title">{{ t('map.length_m') }} / {{ t('map.width_m') }}</p>
+                <div class="farm-calc-inputs">
+                    <div class="form-group"><label class="form-label">{{ t('map.length_m') }}</label><input type="number" id="manLen" class="form-input" placeholder="100" min="1" oninput="calcManual()"/></div>
+                    <div class="form-group"><label class="form-label">{{ t('map.width_m') }}</label><input type="number" id="manWid" class="form-input" placeholder="50" min="1" oninput="calcManual()"/></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="map-draw-panel">
+        <p class="admin-data-title">{{ t('map.field_name') }}</p>
+
+        <div id="gpsControls" style="display:none;margin-bottom:14px">
+            <div style="background:var(--color-surface-2);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:14px;margin-bottom:10px">
+                <div style="display:flex;justify-content:space-between;margin-bottom:10px">
+                    <div><p style="font-family:var(--font-mono);font-size:0.6rem;text-transform:uppercase;color:var(--color-text-faint);margin-bottom:2px">{{ t('map.gps_points') }}</p>
+                    <span style="font-family:var(--font-display);font-size:1.8rem;color:var(--color-green)" id="gpsPts">0</span></div>
+                    <div style="text-align:right"><p style="font-family:var(--font-mono);font-size:0.6rem;text-transform:uppercase;color:var(--color-text-faint);margin-bottom:2px">{{ t('map.distance') }}</p>
+                    <span style="font-family:var(--font-display);font-size:1.8rem;color:var(--color-amber)" id="gpsDist">0 m</span></div>
+                </div>
+                <button id="gpsBtn" class="gps-rec-btn gps-rec-btn--start" onclick="toggleGps()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="8"/></svg>
+                    {{ t('map.start_recording') }}
+                </button>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">{{ t('map.field_name') }}</label>
+            <input type="text" id="fieldName" class="form-input" placeholder="Field {{ farm.total_fields+1 }}" value="Field {{ farm.total_fields+1 }}"/>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">{{ t('map.planned_crop') }}</label>
+            <input type="text" id="cropInput" class="form-input" placeholder="{{ t('map.planned_crop') }}..." autocomplete="off" oninput="onCropInput()" list="cropSuggestions"/>
+            <datalist id="cropSuggestions">
+                {% for c in crops %}
+                <option value="{{ c.crop_name }}">{{ c.crop_name }} ({{ c.local_name }})</option>
+                {% endfor %}
+            </datalist>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">{{ t('map.season') }}</label>
+            <select id="fieldSeason" class="form-input form-select">
+                <option value="A">{{ t('season.a') }}</option>
+                <option value="B">{{ t('season.b') }}</option>
+                <option value="C">{{ t('season.c') }}</option>
+            </select>
+        </div>
+
+        <div class="map-area-display" id="areaDisplay" style="display:none">
+            <p class="map-area-label">{{ t('map.field_area') }}</p>
+            <p class="map-area-m2" id="areaM2">—</p>
+            <p class="map-area-ha" id="areaHa">—</p>
+        </div>
+
+        <div id="costSection" style="display:none">
+            <div style="border-top:1px solid var(--color-border);padding-top:14px;margin-top:4px">
+                <p style="font-family:var(--font-mono);font-size:0.62rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--color-text-muted);margin-bottom:10px">{{ t('map.cost_section') }}</p>
+                <div class="form-group"><label class="form-label">{{ t('map.seed_cost') }}</label><input type="number" id="costSeed" class="form-input" placeholder="0" min="0" oninput="updateProfit()"/></div>
+                <div class="form-group"><label class="form-label">{{ t('map.fertilizer_cost') }}</label><input type="number" id="costFert" class="form-input" placeholder="0" min="0" oninput="updateProfit()"/></div>
+                <div class="form-group"><label class="form-label">{{ t('map.labor_cost') }}</label><input type="number" id="costLabor" class="form-input" placeholder="0" min="0" oninput="updateProfit()"/></div>
+                <div class="form-group"><label class="form-label">{{ t('map.other_cost') }}</label><input type="number" id="costOther" class="form-input" placeholder="0" min="0" oninput="updateProfit()"/></div>
+                <div class="form-group"><label class="form-label">{{ t('map.sale_price') }}</label><input type="number" id="salePrice" class="form-input" placeholder="0" min="0" oninput="updateProfit()"/></div>
+            </div>
+
+            <div id="profitPanel" style="display:none;background:var(--color-surface-2);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:14px;margin-top:4px">
+                <p style="font-family:var(--font-mono);font-size:0.62rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--color-text-muted);margin-bottom:10px">{{ t('map.profit_prediction') }}</p>
+                <div style="display:flex;flex-direction:column;gap:6px">
+                    <div style="display:flex;justify-content:space-between;font-size:0.82rem"><span style="color:var(--color-text-muted)">{{ t('map.expected_revenue') }}</span><span id="ppRevenue" style="font-family:var(--font-mono);color:var(--color-text)">—</span></div>
+                    <div style="display:flex;justify-content:space-between;font-size:0.82rem"><span style="color:var(--color-text-muted)">{{ t('map.total_costs') }}</span><span id="ppCosts" style="font-family:var(--font-mono);color:#f87171">—</span></div>
+                    <div style="border-top:1px solid var(--color-border);padding-top:6px;display:flex;justify-content:space-between;font-size:0.9rem;font-weight:500"><span>{{ t('map.net_profit') }}</span><span id="ppProfit" style="font-family:var(--font-mono)">—</span></div>
+                    <div style="display:flex;justify-content:space-between;font-size:0.78rem"><span style="color:var(--color-text-muted)">ROI</span><span id="ppROI" style="font-family:var(--font-mono);color:var(--color-text-muted)">—</span></div>
+                    <div style="display:flex;justify-content:space-between;font-size:0.78rem"><span style="color:var(--color-text-muted)">{{ t('map.break_even') }}</span><span id="ppBreakeven" style="font-family:var(--font-mono);color:var(--color-text-muted)">—</span></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="map-calc-preview" id="calcPreview" style="display:none">
+            <p class="admin-data-title" style="margin-bottom:8px">AI</p>
+            <div id="calcPreviewGrid"></div>
+        </div>
+
+        <div class="form-group" style="margin-top:4px">
+            <label class="form-label">{{ t('map.notes') }}</label>
+            <textarea id="fieldNotes" class="form-input" rows="2"></textarea>
+        </div>
+
+        <button class="btn btn--primary btn--full" id="saveBtn" disabled onclick="saveField()">{{ t('map.save_field') }}</button>
+        <p class="map-save-hint" id="saveHint">{{ t('map.save_hint') }}</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@2.14.2/dist/leaflet-geoman.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Turf.js/6.5.0/turf.min.js"></script>
+<script>
+/* ── Map height — set directly via JS, recalculated on resize/orientation change.
+     This avoids any CSS specificity/cascade conflicts that caused the map to stay
+     tiny on some phones in previous versions. ── */
+function setMapHeights() {
+    var vh = window.innerHeight;
+    var isMobile = window.innerWidth <= 640;
+    var targetHeight = isMobile ? Math.max(Math.round(vh * 0.62), 380) : 460;
+    var mapEl = document.getElementById('map');
+    var gpsEl = document.getElementById('mapGps');
+    if (mapEl) mapEl.style.height = targetHeight + 'px';
+    if (gpsEl) gpsEl.style.height = targetHeight + 'px';
+    var dbg = document.getElementById('screenSizeDebug');
+    if (dbg) dbg.textContent = window.innerWidth + 'x' + window.innerHeight + ' → map ' + targetHeight + 'px';
+    if (window.geomanMap) setTimeout(function(){ window.geomanMap.invalidateSize(); }, 50);
+    if (window.gpsMapRef) setTimeout(function(){ window.gpsMapRef.invalidateSize(); }, 50);
+}
+setMapHeights();
+window.addEventListener('resize', setMapHeights);
+window.addEventListener('orientationchange', function(){ setTimeout(setMapHeights, 200); });
+
+/* ── State ──────────────────────────────────────────────────────────── */
+var currentMethod  = 'geoman';
+var currentGeoJSON = null;
+var currentAreaM2  = 0;
+var currentCenterLat = null, currentCenterLng = null;
+var manLenM = 0, manWidM = 0;
+var lastCalcData = null;
+
+var gpsPoints   = [];
+var gpsWatchId  = null;
+var gpsRecording= false;
+var gpsMap      = null;
+var gpsPolyline = null;
+var gpsCurrentMarker = null;
+
+function setMethod(m, btn) {
+    currentMethod = m;
+    document.querySelectorAll('.map-method-tab').forEach(function(b){ b.classList.remove('active'); });
+    btn.classList.add('active');
+    document.getElementById('methodGeoman').style.display = m==='geoman' ? '' : 'none';
+    document.getElementById('methodGps').style.display    = m==='gps'    ? '' : 'none';
+    document.getElementById('methodManual').style.display = m==='manual' ? '' : 'none';
+    document.getElementById('gpsControls').style.display  = m==='gps'    ? '' : 'none';
+    if (m==='gps' && !gpsMap) initGpsMap();
+    setTimeout(setMapHeights, 50);
+    checkReady();
+}
+
+/* ── Leaflet-Geoman map ──────────────────────────────────────────── */
+var geomanMap = L.map('map').setView([-3.3731, 29.9189], 8);
+window.geomanMap = geomanMap;
+var osmTile   = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution:'© OpenStreetMap',maxZoom:19});
+var satTile   = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{attribution:'© Esri',maxZoom:19});
+osmTile.addTo(geomanMap);
+L.control.layers({'Street Map':osmTile,'Satellite':satTile}).addTo(geomanMap);
+
+geomanMap.pm.addControls({
+    position:'topleft',
+    drawCircle:false, drawCircleMarker:false, drawPolyline:false, drawMarker:false, drawText:false,
+    rotateMode:false
+});
+geomanMap.pm.setGlobalOptions({ snappable:true, snapDistance:10 });
+
+geomanMap.on('pm:create', function(e) { processLayer(e.layer); });
+geomanMap.on('pm:edit',   function(e) { processLayer(e.layer); });
+geomanMap.on('pm:remove', function()  {
+    currentGeoJSON=null; currentAreaM2=0;
+    document.getElementById('areaDisplay').style.display='none';
+    document.getElementById('calcPreview').style.display='none';
+    checkReady();
+});
+
+function processLayer(layer) {
+    var gj = layer.toGeoJSON();
+    currentGeoJSON   = gj.geometry;
+    currentAreaM2    = turf.area(gj);
+    var c = turf.centroid(gj);
+    currentCenterLat = c.geometry.coordinates[1];
+    currentCenterLng = c.geometry.coordinates[0];
+    showArea(currentAreaM2);
+    runCalcPreview();
+    checkReady();
+}
+
+var locateMarker = null, locateCircle = null;
+
+function locateMeOnDrawMap() {
+    var statusEl = document.getElementById('locateStatusText');
+    var btn = document.getElementById('locateMeBtn');
+    if (!navigator.geolocation) {
+        statusEl.innerHTML = '<span style="color:#f87171">GPS not supported on this browser.</span>';
+        return;
+    }
+    btn.disabled = true;
+    statusEl.innerHTML = '<span style="color:var(--color-amber)">Locating…</span>';
+
+    navigator.geolocation.getCurrentPosition(function(pos) {
+        btn.disabled = false;
+        var lat = pos.coords.latitude, lng = pos.coords.longitude, acc = pos.coords.accuracy;
+
+        if (locateMarker) geomanMap.removeLayer(locateMarker);
+        if (locateCircle) geomanMap.removeLayer(locateCircle);
+
+        locateMarker = L.marker([lat, lng], {
+            icon: L.divIcon({
+                className: '', html: '<div style="width:14px;height:14px;background:#3b82f6;border:3px solid #fff;border-radius:50%;box-shadow:0 0 0 4px rgba(59,130,246,0.3)"></div>',
+                iconSize: [14,14], iconAnchor: [7,7]
+            })
+        }).addTo(geomanMap);
+        locateCircle = L.circle([lat, lng], { radius: acc, color:'#3b82f6', weight:1, fillColor:'#3b82f6', fillOpacity:0.1 }).addTo(geomanMap);
+
+        var zoom = acc <= 15 ? 19 : acc <= 30 ? 18 : acc <= 60 ? 17 : 16;
+        geomanMap.setView([lat, lng], zoom);
+        setTimeout(function(){ geomanMap.invalidateSize(); }, 100);
+
+        if (acc > 50) {
+            statusEl.innerHTML = '<span style="color:var(--color-amber)">±'+Math.round(acc)+'m. Move outdoors for a tighter fix.</span>';
+        } else {
+            statusEl.innerHTML = '<span style="color:var(--color-green)">±'+Math.round(acc)+'m — draw your field now.</span>';
+        }
+    }, function(err) {
+        btn.disabled = false;
+        var msg = err.code === err.PERMISSION_DENIED ? 'Permission denied. Enable location for this site.'
+            : err.code === err.TIMEOUT ? 'Timed out. Move outdoors and try again.'
+            : 'Error: ' + err.message;
+        statusEl.innerHTML = '<span style="color:#f87171">'+msg+'</span>';
+    }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
+}
+
+/* ── GPS walk map ────────────────────────────────────────────────── */
+function initGpsMap() {
+    gpsMap = L.map('mapGps').setView([-3.3731, 29.9189], 8);
+    window.gpsMapRef = gpsMap;
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OSM',maxZoom:19}).addTo(gpsMap);
+    L.control.layers({
+        'Street Map': L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OSM'}),
+        'Satellite':  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{attribution:'© Esri'})
+    }).addTo(gpsMap);
+
+    var hint = document.getElementById('gpsHintText');
+    if (navigator.geolocation) {
+        hint.innerHTML = '<span style="color:var(--color-amber)">Locating…</span>';
+        navigator.geolocation.getCurrentPosition(function(p){
+            var acc = p.coords.accuracy;
+            var zoom = acc <= 15 ? 19 : acc <= 30 ? 18 : acc <= 60 ? 17 : 16;
+            gpsMap.setView([p.coords.latitude, p.coords.longitude], zoom);
+            setTimeout(function(){ gpsMap.invalidateSize(); }, 100);
+            L.circleMarker([p.coords.latitude, p.coords.longitude], {radius:7,color:'#3b82f6',fillColor:'#3b82f6',fillOpacity:0.8,weight:2}).addTo(gpsMap);
+            hint.innerHTML = '±'+Math.round(acc)+'m — press Start Recording';
+        }, function(err){
+            hint.innerHTML = '<span style="color:#f87171">'+err.message+'</span>';
+        }, {enableHighAccuracy:true, timeout:15000, maximumAge:0});
+    }
+}
+
+function toggleGps() { if (!gpsRecording) startGps(); else stopGps(); }
+
+function startGps() {
+    if (!navigator.geolocation) { alert('GPS not available.'); return; }
+    gpsPoints=[]; gpsRecording=true;
+    var btn = document.getElementById('gpsBtn');
+    btn.className='gps-rec-btn gps-rec-btn--stop';
+    btn.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg> {{ t("map.stop_recording") }}';
+    gpsWatchId = navigator.geolocation.watchPosition(onGpsPoint, function(err){
+        alert('GPS error: '+err.message); stopGps();
+    }, {enableHighAccuracy:true, maximumAge:0, timeout:15000});
+}
+
+function onGpsPoint(pos) {
+    var lat=pos.coords.latitude, lng=pos.coords.longitude, acc=pos.coords.accuracy;
+    if (acc>25 && gpsPoints.length>0) return;
+    if (gpsPoints.length>0) {
+        var prev=gpsPoints[gpsPoints.length-1];
+        var d=turf.distance(turf.point([prev[0],prev[1]]),turf.point([lng,lat]),{units:'meters'});
+        if (d<2) return;
+    }
+    gpsPoints.push([lng,lat]);
+    if (gpsCurrentMarker) gpsMap.removeLayer(gpsCurrentMarker);
+    gpsCurrentMarker=L.circleMarker([lat,lng],{radius:8,color:'#8cb950',fillColor:'#8cb950',fillOpacity:0.9,weight:2}).addTo(gpsMap);
+    if (gpsPolyline) gpsMap.removeLayer(gpsPolyline);
+    gpsPolyline=L.polyline(gpsPoints.map(function(p){return[p[1],p[0]];}),{color:'#8cb950',weight:3,opacity:0.8}).addTo(gpsMap);
+    gpsMap.panTo([lat,lng]);
+    document.getElementById('gpsPts').textContent=gpsPoints.length;
+    if (gpsPoints.length>=2) {
+        var dist=turf.length(turf.lineString(gpsPoints),{units:'meters'});
+        document.getElementById('gpsDist').textContent=dist>=1000?(dist/1000).toFixed(2)+' km':Math.round(dist)+' m';
+    }
+    if (gpsPoints.length>=3) {
+        try { var poly=turf.polygon([gpsPoints.concat([gpsPoints[0]])]); showArea(turf.area(poly)); } catch(e){}
+    }
+}
+
+function stopGps() {
+    if (gpsWatchId!==null){ navigator.geolocation.clearWatch(gpsWatchId); gpsWatchId=null; }
+    gpsRecording=false;
+    var btn=document.getElementById('gpsBtn');
+    btn.className='gps-rec-btn gps-rec-btn--start';
+    btn.innerHTML='<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="8"/></svg> {{ t("map.start_recording") }}';
+    if (gpsPoints.length<3){ alert('Need at least 3 GPS points.'); gpsPoints=[]; return; }
+    try {
+        var closed=gpsPoints.concat([gpsPoints[0]]);
+        var poly=turf.polygon([closed]);
+        currentAreaM2=turf.area(poly);
+        currentGeoJSON=poly.geometry;
+        var c=turf.centroid(poly);
+        currentCenterLat=c.geometry.coordinates[1];
+        currentCenterLng=c.geometry.coordinates[0];
+        if (gpsPolyline) gpsMap.removeLayer(gpsPolyline);
+        L.polygon(closed.map(function(p){return[p[1],p[0]];}),{color:'#8cb950',fillColor:'#8cb950',fillOpacity:0.2,weight:2}).addTo(gpsMap);
+        showArea(currentAreaM2);
+        runCalcPreview(); checkReady();
+    } catch(e){ alert('Could not calculate area. Try again, walking more slowly.'); gpsPoints=[]; }
+}
+
+function calcManual() {
+    manLenM=parseFloat(document.getElementById('manLen').value)||0;
+    manWidM=parseFloat(document.getElementById('manWid').value)||0;
+    if (manLenM>0&&manWidM>0) { currentAreaM2=manLenM*manWidM; showArea(currentAreaM2); runCalcPreview(); }
+    checkReady();
+}
+
+function showArea(m2) {
+    document.getElementById('areaM2').textContent=Math.round(m2).toLocaleString()+' m²';
+    document.getElementById('areaHa').textContent=(m2/10000).toFixed(4)+' ha';
+    document.getElementById('areaDisplay').style.display='block';
+}
+
+function onCropInput() { if (currentAreaM2>0) runCalcPreview(); }
+
+async function runCalcPreview() {
+    var crop=document.getElementById('cropInput').value.trim();
+    var ha=currentAreaM2/10000;
+    if (!crop||ha<=0) return;
+    document.getElementById('costSection').style.display='block';
+    var payload=buildPayload(crop,ha);
+    var resp=await fetch('/farm/api/calculate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    var d=await resp.json(); if(d.error) return;
+    lastCalcData=d;
+    var g=document.getElementById('calcPreviewGrid');
+    var rows='';
+    if (d.is_known_crop) {
+        rows+='<div class="calc-result-item"><span class="calc-r-label">Seed</span><span class="calc-r-val">'+d.seed_kg+' kg</span></div>';
+        rows+='<div class="calc-result-item"><span class="calc-r-label">NPK</span><span class="calc-r-val">'+d.npk_kg+' kg</span></div>';
+        rows+='<div class="calc-result-item"><span class="calc-r-label">Yield</span><span class="calc-r-val">'+d.yield_tons+' t</span></div>';
+        rows+='<div class="calc-result-item"><span class="calc-r-label">Plants</span><span class="calc-r-val">'+d.total_plants.toLocaleString()+'</span></div>';
+        rows+='<div class="calc-result-item"><span class="calc-r-label">Harvest</span><span class="calc-r-val">'+d.days_to_harvest+'d</span></div>';
+        rows+='<div class="calc-result-item"><span class="calc-r-label">Season</span><span class="calc-r-val" style="font-size:0.72rem">'+d.best_season+'</span></div>';
+    } else {
+        rows+='<div class="calc-result-item" style="grid-column:1/-1"><span class="calc-r-label">Custom crop</span><span class="calc-r-val" style="font-size:0.8rem;color:var(--color-text-muted)">Enter costs below for profit prediction</span></div>';
+    }
+    g.innerHTML=rows;
+    document.getElementById('calcPreview').style.display='block';
+    updateProfit();
+}
+
+function buildPayload(crop, ha) {
+    return {
+        crop:crop, area_ha:ha,
+        seed_cost_bif:  parseFloat(document.getElementById('costSeed').value)||0,
+        fertilizer_cost:parseFloat(document.getElementById('costFert').value)||0,
+        labor_cost:     parseFloat(document.getElementById('costLabor').value)||0,
+        other_cost:     parseFloat(document.getElementById('costOther').value)||0,
+        sale_price_bif: parseFloat(document.getElementById('salePrice').value)||0,
+    };
+}
+
+async function updateProfit() {
+    var crop=document.getElementById('cropInput').value.trim();
+    var ha=currentAreaM2/10000;
+    if (!crop||ha<=0) return;
+    var resp=await fetch('/farm/api/calculate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(buildPayload(crop,ha))});
+    var d=await resp.json(); if(d.error) return;
+    lastCalcData=d;
+    var totalCosts=d.total_costs, revenue=d.expected_revenue, profit=d.net_profit;
+    if (totalCosts>0||revenue>0) {
+        document.getElementById('ppRevenue').textContent=revenue.toLocaleString()+' BIF';
+        document.getElementById('ppCosts').textContent=totalCosts.toLocaleString()+' BIF';
+        var profEl=document.getElementById('ppProfit');
+        profEl.textContent=(profit>=0?'+':'')+profit.toLocaleString()+' BIF';
+        profEl.className=profit>=0?'profit-positive':'profit-negative';
+        document.getElementById('ppROI').textContent=d.roi+'%';
+        document.getElementById('ppBreakeven').textContent=d.break_even_kg.toLocaleString()+' kg';
+        document.getElementById('profitPanel').style.display='block';
+    }
+}
+
+function checkReady() {
+    var ready=currentAreaM2>0 && !gpsRecording;
+    document.getElementById('saveBtn').disabled=!ready;
+    document.getElementById('saveHint').style.display=ready?'none':'';
+}
+
+async function saveField() {
+    var btn=document.getElementById('saveBtn');
+    btn.disabled=true; btn.textContent='...';
+    var crop=document.getElementById('cropInput').value.trim();
+    var payload={
+        name:       document.getElementById('fieldName').value.trim()||'Field',
+        crop:       crop,
+        season:     document.getElementById('fieldSeason').value,
+        notes:      document.getElementById('fieldNotes').value.trim(),
+        location_method: currentMethod==='gps'?'gps':currentMethod==='manual'?'manual':'draw',
+        area_m2:    currentAreaM2,
+        center_lat: currentCenterLat,
+        center_lng: currentCenterLng,
+        geojson:    (currentMethod!=='manual')?currentGeoJSON:null,
+        length_m:   currentMethod==='manual'?manLenM:null,
+        width_m:    currentMethod==='manual'?manWidM:null,
+    };
+    try {
+        var resp=await fetch('{{ url_for("farm.field_save",farm_id=farm.id) }}',{
+            method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)
+        });
+        var d=await resp.json();
+        if(d.error){alert('Error: '+d.error);btn.disabled=false;btn.textContent='{{ t("map.save_field") }}';}
+        else{window.location.href=d.redirect;}
+    } catch(e){alert('Network error.');btn.disabled=false;btn.textContent='{{ t("map.save_field") }}';}
+}
+</script>
+{% endblock %}

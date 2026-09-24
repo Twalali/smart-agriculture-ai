@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="history-detail-header"><a href="{{ url_for('farm.farm_detail',farm_id=farm.id) }}" class="back-link">&larr; {{ farm.name }}</a></div>
+<div class="field-detail-layout">
+    <div>
+        <div class="field-detail-header-card"><h1 class="cal-title" style="font-size:1.8rem">{{ field.name }}</h1>{% if field.crop %}<span class="about-crop-tag">{{ field.crop }}</span>{% endif %}</div>
+        <div class="field-area-card"><div class="field-area-item"><span class="field-area-val">{{ "%.4f"|format(field.area_ha or 0) }}</span><span class="field-area-unit">ha</span></div><div class="field-area-divider"></div><div class="field-area-item"><span class="field-area-val">{{ "{:,}".format((field.area_m2 or 0)|int) }}</span><span class="field-area-unit">m²</span></div></div>
+    </div>
+    {% if calc %}
+    <div class="field-calc-results">
+        <div class="field-calc-section"><p class="field-calc-section-title">Seed</p><div class="field-calc-grid"><div class="field-calc-item field-calc-item--main"><span class="field-calc-num">{{ calc.seed_kg }} kg</span></div></div></div>
+        <div class="field-calc-section"><p class="field-calc-section-title">Fertilizer</p><div class="field-calc-grid"><div class="field-calc-item field-calc-item--main"><span class="field-calc-num">{{ calc.npk_kg }} kg</span><span class="field-calc-label">NPK</span></div><div class="field-calc-item field-calc-item--main"><span class="field-calc-num">{{ calc.urea_kg }} kg</span><span class="field-calc-label">Urea</span></div></div></div>
+        <div class="field-calc-section"><p class="field-calc-section-title">Population</p><div class="field-calc-grid"><div class="field-calc-item field-calc-item--main"><span class="field-calc-num">{{ "{:,}".format(calc.total_plants) }}</span><span class="field-calc-label">Plants</span></div></div></div>
+        <div class="field-calc-section"><p class="field-calc-section-title">{{ t('map.profit_prediction') }}</p><div class="field-calc-grid">
+            <div class="field-calc-item field-calc-item--main" style="border-color:var(--color-green)"><span class="field-calc-num" style="color:var(--color-green)">{{ calc.yield_tons }} t</span><span class="field-calc-label">Yield</span></div>
+        </div></div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

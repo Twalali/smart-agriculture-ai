@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Messages{% endblock %}
+{% block content %}
+<section class="history-hero">
+    <div>
+        <h1 class="cal-title">Messages</h1>
+        <p class="cal-subtitle">{% if total_unread > 0 %}{{ total_unread }} non lu(s){% else %}Tous lus{% endif %}</p>
+    </div>
+</section>
+
+<div style="display:grid;grid-template-columns:1fr 280px;gap:24px;align-items:start">
+    <!-- Conversation list -->
+    <div>
+        {% if conversations %}
+        <div style="display:flex;flex-direction:column;gap:8px">
+        {% for conv in conversations %}
+        <a href="{{ url_for('community.conversation', partner_id=conv.partner.id) }}" style="text-decoration:none">
+            <div class="forum-post-card" style="{% if conv.unread > 0 %}border-color:var(--color-green){% endif %}">
+                <div style="display:flex;align-items:center;gap:14px">
+                    <span class="forum-avatar forum-avatar--lg {% if conv.partner.is_verified_professional or conv.partner.role in ['admin','government'] %}forum-avatar--pro{% endif %}">
+                        {{ conv.partner.username[0].upper() }}
+                    </span>
+                    <div style="flex:1;min-width:0">
+                        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
+                            <span style="font-weight:500;font-size:0.9rem">{{ conv.partner.username }}</span>
+                            {% if conv.partner.is_verified_professional %}<span class="verified-badge">✓</span>{% endif %}
+                            {% if conv.partner.role in ['admin','government'] %}<span class="gov-badge">GOV</span>{% endif %}
+                            {% if conv.unread > 0 %}<span style="background:#f87171;color:#fff;font-family:var(--font-mono);font-size:0.6rem;padding:1px 6px;border-radius:999px">{{ conv.unread }}</span>{% endif %}
+                        </div>
+                        <p style="font-size:0.8rem;color:var(--color-text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+                            {% if conv.last_msg.sender_id == current_user.id %}Vous: {% endif %}{{ conv.last_msg.body[:60] }}{% if conv.last_msg.body|length > 60 %}…{% endif %}
+                        </p>
+                    </div>
+                    <span style="font-family:var(--font-mono);font-size:0.65rem;color:var(--color-text-faint);white-space:nowrap">{{ conv.last_msg.created_at.strftime('%d %b') }}</span>
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+        </div>
+        {% else %}
+        <div class="history-empty">
+            <p class="history-empty-title">Pas encore de messages</p>
+            <p class="history-empty-body">Envoyez un message à un agronome vérifié ou un officiel gouvernemental.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Professionals to message -->
+    <div class="admin-data-card" style="padding:20px">
+        <p class="admin-data-title">Professionnels Disponibles</p>
+        {% if professionals %}
+        <div style="display:flex;flex-direction:column;gap:12px">
+        {% for pro in professionals %}
+        <div style="display:flex;align-items:center;gap:10px">
+            <span class="forum-avatar forum-avatar--pro">{{ pro.username[0].upper() }}</span>
+            <div style="flex:1">
+                <p style="font-size:0.83rem;font-weight:500">{{ pro.username }}
+                    {% if pro.is_verified_professional %}<span class="verified-badge">✓</span>{% endif %}
+                    {% if pro.role in ['admin','government'] %}<span class="gov-badge">GOV</span>{% endif %}
+                </p>
+                <p style="font-family:var(--font-mono);font-size:0.62rem;color:var(--color-text-muted)">{{ pro.province or pro.role }}</p>
+            </div>
+            <a href="{{ url_for('community.conversation', partner_id=pro.id) }}" class="btn btn--primary" style="padding:5px 12px;font-size:0.72rem">Message</a>
+        </div>
+        {% endfor %}
+        </div>
+        {% else %}
+        <p style="font-size:0.8rem;color:var(--color-text-faint)">Aucun professionnel disponible.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

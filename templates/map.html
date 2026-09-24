@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}{{ t('nav.map') }}{% endblock %}
+{% block content %}
+<section class="map-hero"><div><h1 class="cal-title">{{ t('nav.map') }}</h1><p class="cal-subtitle">{{ total_analyses }}</p></div></section>
+<div class="map-panel">
+    <div class="map-province-list">
+    {% for p in province_data|sort(attribute='risk',reverse=True) %}
+        <div class="map-province-row"><div class="map-province-row-left"><span class="map-dot map-dot--{{ p.risk }}"></span><span class="map-province-name">{{ p.province }}</span></div>
+        <span class="map-prov-count">{{ p.total }}</span></div>
+    {% endfor %}
+    </div>
+</div>
+{% if province_data %}
+<div class="map-summary-grid">
+{% for p in province_data|sort(attribute='risk')|reverse %}
+<div class="map-summary-card map-summary-card--{{ p.risk }}">
+    <div class="map-summary-top"><span class="map-summary-province">{{ p.province }}</span><span class="map-prov-risk-label map-prov-risk--{{ p.risk }}">{{ p.risk }}</span></div>
+    <div class="map-summary-stats"><span>{{ p.total }}</span>{% if p.critical>0 %}<span style="color:#f87171">{{ p.critical }}</span>{% endif %}</div>
+    {% if p.top_diseases %}<div class="map-summary-diseases">{% for d,count in p.top_diseases %}<span class="cal-risk-tag">{{ d }}</span>{% endfor %}</div>{% endif %}
+</div>
+{% endfor %}
+</div>
+{% endif %}
+{% endblock %}

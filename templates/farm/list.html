@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}{{ t('farm.my_farms') }}{% endblock %}
+{% block content %}
+<section class="history-hero"><div><h1 class="cal-title">{{ t('farm.my_farms') }}</h1><p class="cal-subtitle">{{ farms|length }}</p></div><a href="{{ url_for('farm.farm_new') }}" class="btn btn--primary">{{ t('farm.new_farm') }}</a></section>
+{% if farms %}
+<div class="farm-list-grid">
+{% for farm in farms %}
+<div class="farm-card">
+    <div class="farm-card-header"><div><h2 class="farm-card-name">{{ farm.name }}</h2><p class="farm-card-location">{{ farm.province or '' }}</p></div><div class="farm-card-stats"><span class="farm-stat-num">{{ farm.total_fields }}</span><span class="farm-stat-label">{{ t('farm.fields') }}</span></div></div>
+    <div class="farm-card-area"><span class="farm-area-val">{{ "%.2f"|format(farm.total_area_ha) }} ha</span></div>
+    <div class="farm-card-actions"><a href="{{ url_for('farm.farm_detail',farm_id=farm.id) }}" class="btn btn--primary" style="flex:1;text-align:center">{{ t('farm.open_farm') }}</a>
+    <form method="POST" action="{{ url_for('farm.farm_delete',farm_id=farm.id) }}" onsubmit="return confirm('Delete?');"><button class="history-delete-btn">&times;</button></form></div>
+</div>
+{% endfor %}
+</div>
+{% else %}<div class="history-empty"><p class="history-empty-title">{{ t('farm.no_farms_title') }}</p><p class="history-empty-body">{{ t('farm.no_farms_body') }}</p><a href="{{ url_for('farm.farm_new') }}" class="btn btn--primary">{{ t('farm.create_first') }}</a></div>{% endif %}
+{% endblock %}

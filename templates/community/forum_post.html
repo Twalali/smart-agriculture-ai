@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}{{ post.title }} — Forum{% endblock %}
+{% block content %}
+<div class="history-detail-header">
+    <a href="{{ url_for('community.forum') }}" class="back-link">&larr; Forum</a>
+    <span style="font-family:var(--font-mono);font-size:0.7rem;color:var(--color-text-faint)">{{ post.reply_count }} réponses</span>
+</div>
+
+<!-- Original post -->
+<div class="forum-thread-post">
+    <div class="forum-thread-author">
+        <span class="forum-avatar forum-avatar--lg">{{ post.author.username[0].upper() }}</span>
+        <div>
+            <p style="font-weight:500;font-size:0.9rem">{{ post.author.username }}
+                {% if post.author.is_verified_professional %}<span class="verified-badge" title="Agronome vérifié">✓ Vérifié</span>{% endif %}
+                {% if post.author.role in ['admin','government'] %}<span class="gov-badge">GOV</span>{% endif %}
+            </p>
+            <p style="font-family:var(--font-mono);font-size:0.65rem;color:var(--color-text-muted)">{{ post.created_at.strftime('%d %b %Y %H:%M') }}</p>
+        </div>
+        {% if post.crop_tag %}<span class="about-crop-tag" style="margin-left:auto">{{ post.crop_tag }}</span>{% endif %}
+    </div>
+    <h1 style="font-family:var(--font-display);font-size:1.6rem;margin-bottom:12px">{{ post.title }}</h1>
+    <div class="forum-post-body">{{ post.body }}</div>
+    {% if current_user.is_authenticated and (current_user.id==post.user_id or current_user.is_admin) %}
+    <form method="POST" action="{{ url_for('community.forum_delete', post_id=post.id) }}" style="margin-top:12px" onsubmit="return confirm('Supprimer ce sujet?')">
+        <button class="btn btn--outline" style="color:#f87171;padding:5px 12px;font-size:0.75rem">Supprimer</button>
+    </form>
+    {% endif %}
+</div>
+
+<!-- Replies -->
+{% if post.replies %}
+<div style="margin:28px 0;display:flex;flex-direction:column;gap:14px">
+    {% for reply in post.replies %}
+    <div class="forum-reply {% if reply.is_solution %}forum-reply--solution{% endif %}" id="reply-{{ reply.id }}">
+        {% if reply.is_solution %}<div class="solution-banner">✓ Meilleure Réponse</div>{% endif %}
+        <div class="forum-thread-author">
+            <span class="forum-avatar {% if reply.author.is_verified_professional or reply.author.role in ['admin','government'] %}forum-avatar--pro{% endif %}">{{ reply.author.username[0].upper() }}</span>
+            <div>
+                <p style="font-weight:500;font-size:0.9rem">{{ reply.author.username }}
+                    {% if reply.author.is_verified_professional %}<span class="verified-badge">✓ Vérifié</span>{% endif %}
+                    {% if reply.author.role in ['admin','government'] %}<span class="gov-badge">GOV</span>{% endif %}
+                </p>
+                <p style="font-family:var(--font-mono);font-size:0.65rem;color:var(--color-text-muted)">{{ reply.created_at.strftime('%d %b %Y %H:%M') }}</p>
+            </div>
+            <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+                {% if current_user.is_authenticated and current_user.id==post.user_id %}
+                <button onclick="markSolution({{ reply.id }}, this)" class="btn btn--outline" style="padding:4px 10px;font-size:0.7rem">
+                    {{ '✓ Solution' if reply.is_solution else 'Marquer Solution' }}
+                </button>
+                {% endif %}
+                {% if current_user.is_authenticated and (current_user.id==reply.user_id or current_user.is_admin) %}
+                <form method="POST" action="{{ url_for('community.reply_delete', reply_id=reply.id) }}" onsubmit="return confirm('Supprimer?')">
+                    <button class="history-delete-btn">&times;</button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+        <div class="forum-post-body" style="margin-top:10px">{{ reply.body }}</div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- Reply form -->
+{% if current_user.is_authenticated %}
+<div class="admin-data-card" style="margin-top:20px">
+    <p class="admin-data-title">Votre Réponse</p>
+    <form method="POST">
+        <div class="form-group" style="margin-bottom:12px">
+            <textarea name="body" class="form-input" required rows="5"
+                      placeholder="Partagez votre connaissance ou expérience..."></textarea>
+        </div>
+        <button type="submit" class="btn btn--primary">Publier la Réponse</button>
+    </form>
+</div>
+{% else %}
+<div style="text-align:center;padding:32px;background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);margin-top:20px">
+    <p style="margin-bottom:12px;color:var(--color-text-muted)">Connectez-vous pour répondre</p>
+    <a href="{{ url_for('auth_login') }}" class="btn btn--primary">Se Connecter</a>
+</div>
+{% endif %}
+
+{% endblock %}
+{% block scripts %}
+<script>
+function markSolution(replyId, btn) {
+    fetch('/community/forum/reply/' + replyId + '/solution', {method: 'POST'})
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+            btn.textContent = d.is_solution ? '✓ Solution' : 'Marquer Solution';
+            var card = document.getElementById('reply-' + replyId);
+            card.classList.toggle('forum-reply--solution', d.is_solution);
+            var banner = card.querySelector('.solution-banner');
+            if (d.is_solution && !banner) {
+                var b = document.createElement('div');
+                b.className = 'solution-banner';
+                b.textContent = '✓ Meilleure Réponse';
+                card.insertBefore(b, card.firstChild);
+            } else if (!d.is_solution && banner) { banner.remove(); }
+        });
+}
+</script>
+{% endblock %}

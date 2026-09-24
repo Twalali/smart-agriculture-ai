@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Smart Agriculture AI — Plateforme Nationale Agricole du Burundi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+/* ── Reset & base ─────────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --green:#4a9e2f;--green-dark:#2d6b18;--green-light:#7dc452;
+  --amber:#c9933a;--text:#1a2e12;--text-muted:#4a6e34;
+  --surface:#ffffff;--surface-2:#f4f7f0;--border:rgba(60,100,40,0.15);
+  --font-display:'DM Serif Display',Georgia,serif;
+  --font-body:'DM Sans',system-ui,sans-serif;
+  --font-mono:'DM Mono','Courier New',monospace;
+}
+html{scroll-behavior:smooth}
+body{font-family:var(--font-body);color:var(--text);background:var(--surface);overflow-x:hidden}
+a{text-decoration:none;color:inherit}
+img{display:block;max-width:100%}
+
+/* ── Navbar ───────────────────────────────────────────────────── */
+.navbar{position:fixed;top:0;left:0;right:0;z-index:1000;padding:0 40px;display:flex;align-items:center;justify-content:space-between;height:72px;transition:all 0.3s}
+.navbar.scrolled{background:rgba(255,255,255,0.97);box-shadow:0 1px 20px rgba(0,0,0,0.08);backdrop-filter:blur(12px)}
+.navbar-logo{display:flex;align-items:center;gap:12px}
+.navbar-logo-mark{width:40px;height:40px;background:var(--green);color:#fff;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:0.75rem;font-weight:500;flex-shrink:0}
+.navbar-logo-text{display:flex;flex-direction:column;line-height:1.1}
+.navbar-logo-primary{font-size:0.9rem;font-weight:600;color:#fff;transition:color 0.3s}
+.navbar-logo-tag{font-size:0.65rem;font-family:var(--font-mono);color:rgba(255,255,255,0.7);transition:color 0.3s}
+.navbar.scrolled .navbar-logo-primary{color:var(--text)}
+.navbar.scrolled .navbar-logo-tag{color:var(--text-muted)}
+.navbar-links{display:flex;align-items:center;gap:32px}
+.navbar-link{font-size:0.85rem;color:rgba(255,255,255,0.85);transition:color 0.2s;font-weight:400}
+.navbar-link:hover{color:#fff}
+.navbar.scrolled .navbar-link{color:var(--text-muted)}
+.navbar.scrolled .navbar-link:hover{color:var(--green)}
+.navbar-cta{padding:9px 22px;background:var(--green);color:#fff;border-radius:6px;font-size:0.85rem;font-weight:500;transition:background 0.2s}
+.navbar-cta:hover{background:var(--green-dark);color:#fff}
+.navbar-hamburger{display:none;flex-direction:column;gap:5px;background:none;border:none;cursor:pointer;padding:4px}
+.navbar-hamburger span{display:block;width:22px;height:2px;background:rgba(255,255,255,0.85);border-radius:2px;transition:all 0.2s}
+.navbar.scrolled .navbar-hamburger span{background:var(--text-muted)}
+@media(max-width:800px){
+  .navbar-links{display:none}.navbar-hamburger{display:flex}.navbar{padding:0 20px}
+  .navbar-links.open{display:flex;flex-direction:column;gap:0;position:absolute;top:72px;left:0;right:0;background:#fff;box-shadow:0 8px 24px rgba(0,0,0,0.1);padding:8px 0}
+  .navbar-link{color:var(--text-muted)!important;padding:14px 24px;width:100%;border-bottom:1px solid var(--border)}
+  .navbar-cta{margin:12px 24px;text-align:center}
+}
+
+/* ── Hero Slider ──────────────────────────────────────────────── */
+.slider{position:relative;height:100vh;min-height:600px;overflow:hidden}
+.slide{position:absolute;inset:0;opacity:0;transition:opacity 0.8s ease;display:flex;align-items:center}
+.slide.active{opacity:1;z-index:2}
+.slide.prev{opacity:0;z-index:1}
+/* Slide backgrounds — add your own images via data-bg attribute */
+.slide-bg{position:absolute;inset:0;background-size:cover;background-position:center;transition:transform 6s ease}
+.slide.active .slide-bg{transform:scale(1.04)}
+/* If no image provided, use gradient fallback */
+.slide-bg.slide-1-bg{background-image:linear-gradient(135deg,#0d2e08 0%,#1a5210 40%,#2d8020 100%)}
+.slide-bg.slide-2-bg{background-image:linear-gradient(135deg,#082e2a 0%,#0d5249 40%,#1a7a6e 100%)}
+.slide-bg.slide-3-bg{background-image:linear-gradient(135deg,#1a2e08 0%,#3a5218 40%,#567a28 100%)}
+.slide-bg.slide-4-bg{background-image:linear-gradient(135deg,#0d1a2e 0%,#1a3052 40%,#284880 100%)}
+/* Dark overlay for readability */
+.slide-overlay{position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,0.65) 0%,rgba(0,0,0,0.35) 60%,rgba(0,0,0,0.05) 100%)}
+.slide-content{position:relative;z-index:10;max-width:700px;padding:0 80px;animation:none}
+.slide.active .slide-content{animation:slideIn 0.7s ease forwards}
+@keyframes slideIn{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+.slide-eyebrow{font-family:var(--font-mono);font-size:0.72rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--green-light);margin-bottom:18px;display:flex;align-items:center;gap:10px}
+.slide-eyebrow::before{content:'';display:block;width:32px;height:2px;background:var(--green-light)}
+.slide-title{font-family:var(--font-display);font-size:clamp(2.4rem,5.5vw,4.2rem);color:#fff;line-height:1.1;margin-bottom:20px;font-weight:400}
+.slide-title em{font-style:italic;color:var(--green-light)}
+.slide-desc{font-size:1.05rem;color:rgba(255,255,255,0.82);max-width:480px;line-height:1.7;margin-bottom:36px}
+.slide-actions{display:flex;gap:14px;flex-wrap:wrap}
+.slide-btn-primary{padding:14px 32px;background:var(--green);color:#fff;border-radius:6px;font-size:0.95rem;font-weight:500;display:inline-flex;align-items:center;gap:8px;transition:all 0.2s}
+.slide-btn-primary:hover{background:var(--green-dark);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.3)}
+.slide-btn-secondary{padding:14px 32px;background:rgba(255,255,255,0.12);color:#fff;border:1px solid rgba(255,255,255,0.3);border-radius:6px;font-size:0.95rem;font-weight:400;backdrop-filter:blur(4px);transition:all 0.2s}
+.slide-btn-secondary:hover{background:rgba(255,255,255,0.22);transform:translateY(-2px)}
+@media(max-width:640px){.slide-content{padding:0 24px}.slide-btn-primary,.slide-btn-secondary{padding:12px 22px;font-size:0.875rem}}
+
+/* Slide controls */
+.slider-controls{position:absolute;bottom:40px;left:80px;z-index:20;display:flex;align-items:center;gap:16px}
+@media(max-width:640px){.slider-controls{left:24px;bottom:28px}}
+.slider-dots{display:flex;gap:8px}
+.slider-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,0.4);cursor:pointer;transition:all 0.3s;border:none}
+.slider-dot.active{background:#fff;width:28px;border-radius:4px}
+.slider-arrows{position:absolute;bottom:28px;right:40px;z-index:20;display:flex;gap:10px}
+@media(max-width:640px){.slider-arrows{right:20px;bottom:20px}}
+.slider-arrow{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;font-size:1.1rem;backdrop-filter:blur(4px)}
+.slider-arrow:hover{background:rgba(255,255,255,0.25)}
+/* Slide counter */
+.slide-counter{position:absolute;top:50%;right:40px;transform:translateY(-50%);z-index:20;display:flex;flex-direction:column;gap:6px}
+@media(max-width:800px){.slide-counter{display:none}}
+.slide-counter-item{width:3px;height:32px;background:rgba(255,255,255,0.2);border-radius:2px;cursor:pointer;transition:all 0.3s;position:relative;overflow:hidden}
+.slide-counter-item.active{background:rgba(255,255,255,0.4)}
+.slide-counter-item.active::after{content:'';position:absolute;top:0;left:0;width:100%;background:#fff;border-radius:2px;animation:fillBar var(--slide-duration,6s) linear forwards}
+@keyframes fillBar{from{height:0}to{height:100%}}
+/* Scroll indicator */
+.scroll-hint{position:absolute;bottom:40px;left:50%;transform:translateX(-50%);z-index:20;display:flex;flex-direction:column;align-items:center;gap:8px;color:rgba(255,255,255,0.6);font-family:var(--font-mono);font-size:0.62rem;letter-spacing:0.12em;text-transform:uppercase}
+.scroll-hint-wheel{width:22px;height:36px;border:2px solid rgba(255,255,255,0.4);border-radius:12px;position:relative}
+.scroll-hint-wheel::after{content:'';position:absolute;top:6px;left:50%;transform:translateX(-50%);width:3px;height:6px;background:rgba(255,255,255,0.6);border-radius:2px;animation:scrollDown 1.8s ease infinite}
+@keyframes scrollDown{0%{opacity:1;transform:translateX(-50%) translateY(0)}100%{opacity:0;transform:translateX(-50%) translateY(12px)}}
+
+/* ── Stats bar ────────────────────────────────────────────────── */
+.stats-bar{background:var(--green-dark);padding:24px 80px;display:grid;grid-template-columns:repeat(4,1fr);gap:1px}
+@media(max-width:800px){.stats-bar{padding:20px 24px;grid-template-columns:repeat(2,1fr);gap:16px}}
+.stat-item{display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;padding:8px}
+.stat-num{font-family:var(--font-display);font-size:2.2rem;color:#fff;line-height:1}
+.stat-label{font-family:var(--font-mono);font-size:0.65rem;text-transform:uppercase;letter-spacing:0.1em;color:rgba(255,255,255,0.65)}
+
+/* ── Section common ───────────────────────────────────────────── */
+.section{padding:96px 80px}
+@media(max-width:800px){.section{padding:64px 24px}}
+.section-eyebrow{font-family:var(--font-mono);font-size:0.7rem;text-transform:uppercase;letter-spacing:0.14em;color:var(--green);margin-bottom:14px}
+.section-title{font-family:var(--font-display);font-size:clamp(1.8rem,3.5vw,3rem);color:var(--text);line-height:1.15;margin-bottom:20px}
+.section-body{font-size:1rem;color:var(--text-muted);max-width:600px;line-height:1.7}
+.section--alt{background:var(--surface-2)}
+
+/* ── Features grid ────────────────────────────────────────────── */
+.features-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:24px;margin-top:56px}
+.feature-card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:32px;display:flex;flex-direction:column;gap:16px;transition:all 0.2s;position:relative;overflow:hidden}
+.feature-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--green),var(--green-light));transform:scaleX(0);transform-origin:left;transition:transform 0.3s}
+.feature-card:hover{transform:translateY(-4px);box-shadow:0 12px 40px rgba(0,0,0,0.08)}
+.feature-card:hover::before{transform:scaleX(1)}
+.feature-icon{width:52px;height:52px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0}
+.feature-icon--green{background:rgba(74,158,47,0.1)}
+.feature-icon--blue{background:rgba(59,130,246,0.1)}
+.feature-icon--amber{background:rgba(201,147,58,0.1)}
+.feature-icon--purple{background:rgba(139,92,246,0.1)}
+.feature-icon--teal{background:rgba(20,184,166,0.1)}
+.feature-icon--rose{background:rgba(244,63,94,0.1)}
+.feature-title{font-size:1.05rem;font-weight:600;color:var(--text)}
+.feature-body{font-size:0.875rem;color:var(--text-muted);line-height:1.6;flex:1}
+.feature-link{font-size:0.82rem;color:var(--green);font-weight:500;display:inline-flex;align-items:center;gap:4px}
+
+/* ── How it works ─────────────────────────────────────────────── */
+.steps-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:0;margin-top:56px;position:relative}
+.steps-grid::before{content:'';position:absolute;top:36px;left:10%;right:10%;height:2px;background:linear-gradient(90deg,transparent,var(--border),transparent);display:none}
+@media(min-width:800px){.steps-grid::before{display:block}}
+.step-item{display:flex;flex-direction:column;align-items:center;text-align:center;gap:16px;padding:24px 20px;position:relative}
+.step-num{width:72px;height:72px;border-radius:50%;background:#fff;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:1.8rem;color:var(--green);position:relative;z-index:1;transition:all 0.3s}
+.step-item:hover .step-num{background:var(--green);color:#fff;border-color:var(--green);transform:scale(1.1)}
+.step-title{font-size:0.95rem;font-weight:600;color:var(--text)}
+.step-body{font-size:0.82rem;color:var(--text-muted);line-height:1.6}
+
+/* ── Testimonial / partners ───────────────────────────────────── */
+.partners-row{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:40px;margin-top:48px;opacity:0.65}
+.partner-badge{font-family:var(--font-mono);font-size:0.72rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-muted);padding:10px 20px;border:1px solid var(--border);border-radius:6px}
+
+/* ── CTA section ──────────────────────────────────────────────── */
+.cta-section{background:linear-gradient(135deg,var(--green-dark) 0%,var(--green) 60%,var(--green-light) 100%);padding:96px 80px;text-align:center;position:relative;overflow:hidden}
+@media(max-width:800px){.cta-section{padding:64px 24px}}
+.cta-section::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")}
+.cta-title{font-family:var(--font-display);font-size:clamp(2rem,4vw,3.2rem);color:#fff;margin-bottom:18px}
+.cta-body{font-size:1rem;color:rgba(255,255,255,0.82);max-width:560px;margin:0 auto 36px;line-height:1.7}
+.cta-actions{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+.cta-btn-primary{padding:15px 36px;background:#fff;color:var(--green-dark);border-radius:6px;font-size:0.95rem;font-weight:600;transition:all 0.2s;display:inline-flex;align-items:center;gap:8px}
+.cta-btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(0,0,0,0.2)}
+.cta-btn-secondary{padding:15px 36px;background:rgba(255,255,255,0.12);color:#fff;border:1px solid rgba(255,255,255,0.3);border-radius:6px;font-size:0.95rem;font-weight:400;transition:all 0.2s}
+.cta-btn-secondary:hover{background:rgba(255,255,255,0.22)}
+
+/* ── Footer ───────────────────────────────────────────────────── */
+.footer{background:#0d1108;color:rgba(255,255,255,0.6);padding:60px 80px 32px}
+@media(max-width:800px){.footer{padding:40px 24px 24px}}
+.footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:48px;margin-bottom:48px}
+@media(max-width:900px){.footer-grid{grid-template-columns:1fr 1fr;gap:32px}}
+@media(max-width:560px){.footer-grid{grid-template-columns:1fr}}
+.footer-brand{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.footer-logo-mark{width:36px;height:36px;background:var(--green);color:#fff;border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:0.7rem;flex-shrink:0}
+.footer-brand-name{font-size:0.9rem;font-weight:500;color:#fff}
+.footer-tagline{font-size:0.8rem;line-height:1.6;max-width:260px;color:rgba(255,255,255,0.5)}
+.footer-col-title{font-family:var(--font-mono);font-size:0.62rem;text-transform:uppercase;letter-spacing:0.12em;color:rgba(255,255,255,0.3);margin-bottom:16px}
+.footer-links{display:flex;flex-direction:column;gap:10px}
+.footer-link-item{font-size:0.82rem;color:rgba(255,255,255,0.5);transition:color 0.15s}
+.footer-link-item:hover{color:#fff}
+.footer-bottom{border-top:1px solid rgba(255,255,255,0.08);padding-top:24px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;font-family:var(--font-mono);font-size:0.68rem;color:rgba(255,255,255,0.3)}
+.gov-badge-footer{padding:6px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:4px;font-family:var(--font-mono);font-size:0.62rem;color:rgba(255,255,255,0.4);letter-spacing:0.08em}
+</style>
+</head>
+<body>
+
+<!-- ── Navbar ─────────────────────────────────────────────────── -->
+<nav class="navbar" id="navbar">
+    <a href="#" class="navbar-logo">
+        <span class="navbar-logo-mark">SA</span>
+        <div class="navbar-logo-text">
+            <span class="navbar-logo-primary">Smart Agriculture AI</span>
+            <span class="navbar-logo-tag">Burundi Agricultural Platform</span>
+        </div>
+    </a>
+    <div class="navbar-links" id="navLinks">
+        <a href="#features" class="navbar-link">Fonctionnalités</a>
+        <a href="#how" class="navbar-link">Comment ça marche</a>
+        <a href="#about" class="navbar-link">À propos</a>
+        <a href="/login" class="navbar-link">Connexion</a>
+        <a href="/register" class="navbar-cta">Commencer</a>
+    </div>
+    <button class="navbar-hamburger" id="hamburger" aria-label="Menu">
+        <span></span><span></span><span></span>
+    </button>
+</nav>
+
+<!-- ── Hero Slider ────────────────────────────────────────────── -->
+<section class="slider" id="heroSlider">
+
+    <! -- SLIDE 1: AI Disease Detection -->
+    <div class="slide active" data-index="0">
+        <!--
+            TO ADD YOUR IMAGE:
+            Replace the gradient below with your photo.
+            Option A — inline style: style="background-image:url('/static/img/slide1.jpg')"
+            Option B — place image at static/img/slide1.jpg and uncomment the data-bg below
+        -->
+        <div class="slide-bg slide-1-bg"></div>
+        <div class="slide-overlay"></div>
+        <div class="slide-content">
+            <p class="slide-eyebrow">Intelligence Artificielle</p>
+            <h1 class="slide-title">Smart<br/><em>Agriculture AI</em></h1>
+            <p class="slide-desc">Détectez les maladies des cultures instantanément grâce à l'intelligence artificielle et recevez des recommandations d'experts agronomiques.</p>
+            <div class="slide-actions">
+                <a href="/upload" class="slide-btn-primary">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    Commencer l'Analyse
+                </a>
+                <a href="#features" class="slide-btn-secondary">En savoir plus</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 2: Weather Intelligence -->
+    <div class="slide" data-index="1">
+        <div class="slide-bg slide-2-bg"></div>
+        <div class="slide-overlay"></div>
+        <div class="slide-content">
+            <p class="slide-eyebrow">Météo & Climat</p>
+            <h1 class="slide-title">Intelligence<br/><em>Météorologique</em></h1>
+            <p class="slide-desc">Recevez des prévisions météo précises et des recommandations agricoles adaptées à votre localisation au Burundi.</p>
+            <div class="slide-actions">
+                <a href="/" class="slide-btn-primary">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9z"/></svg>
+                    Vérifier la Météo
+                </a>
+                <a href="#how" class="slide-btn-secondary">Comment ça marche</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 3: Farm Planning -->
+    <div class="slide" data-index="2">
+        <div class="slide-bg slide-3-bg"></div>
+        <div class="slide-overlay"></div>
+        <div class="slide-content">
+            <p class="slide-eyebrow">Planification Agricole</p>
+            <h1 class="slide-title">Planifiez<br/><em>Votre Ferme</em></h1>
+            <p class="slide-desc">Mesurez vos parcelles par GPS, calculez les besoins en semences et engrais, et estimez vos rendements et revenus par saison.</p>
+            <div class="slide-actions">
+                <a href="/farm/" class="slide-btn-primary">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                    Planifier Ma Ferme
+                </a>
+                <a href="/calendar" class="slide-btn-secondary">Calendrier Agricole</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 4: Community -->
+    <div class="slide" data-index="3">
+        <div class="slide-bg slide-4-bg"></div>
+        <div class="slide-overlay"></div>
+        <div class="slide-content">
+            <p class="slide-eyebrow">Communauté & Expertise</p>
+            <h1 class="slide-title">Communauté<br/><em>des Agriculteurs</em></h1>
+            <p class="slide-desc">Connectez-vous avec des agriculteurs, des agronomes, des ONG et les services gouvernementaux pour partager connaissances et expertise.</p>
+            <div class="slide-actions">
+                <a href="/community/forum" class="slide-btn-primary">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    Rejoindre la Communauté
+                </a>
+                <a href="/register" class="slide-btn-secondary">Créer un Compte</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dots -->
+    <div class="slider-controls">
+        <div class="slider-dots" id="sliderDots">
+            <button class="slider-dot active" data-slide="0"></button>
+            <button class="slider-dot" data-slide="1"></button>
+            <button class="slider-dot" data-slide="2"></button>
+            <button class="slider-dot" data-slide="3"></button>
+        </div>
+    </div>
+
+    <!-- Side counter bars -->
+    <div class="slide-counter" id="slideCounter">
+        <div class="slide-counter-item active" data-slide="0"></div>
+        <div class="slide-counter-item" data-slide="1"></div>
+        <div class="slide-counter-item" data-slide="2"></div>
+        <div class="slide-counter-item" data-slide="3"></div>
+    </div>
+
+    <!-- Arrows -->
+    <div class="slider-arrows">
+        <button class="slider-arrow" id="sliderPrev" aria-label="Previous">&#8592;</button>
+        <button class="slider-arrow" id="sliderNext" aria-label="Next">&#8594;</button>
+    </div>
+
+    <!-- Scroll hint -->
+    <div class="scroll-hint">
+        <div class="scroll-hint-wheel"></div>
+        <span>Défiler</span>
+    </div>
+</section>
+
+<!-- ── Stats bar ───────────────────────────────────────────────── -->
+<div class="stats-bar">
+    <div class="stat-item"><span class="stat-num">11</span><span class="stat-label">Cultures Supportées</span></div>
+    <div class="stat-item"><span class="stat-num">18</span><span class="stat-label">Provinces du Burundi</span></div>
+    <div class="stat-item"><span class="stat-num">3</span><span class="stat-label">Saisons Agricoles</span></div>
+    <div class="stat-item"><span class="stat-num">3</span><span class="stat-label">Langues: FR / KIR / EN</span></div>
+</div>
+
+<!-- ── Features section ───────────────────────────────────────── -->
+<section class="section" id="features">
+    <div>
+        <p class="section-eyebrow">Fonctionnalités</p>
+        <h2 class="section-title">Tout ce dont l'agriculteur<br/>burundais a besoin</h2>
+        <p class="section-body">Une plateforme complète conçue pour moderniser l'agriculture au Burundi — de la détection de maladies à la commercialisation des récoltes.</p>
+    </div>
+    <div class="features-grid">
+        <div class="feature-card">
+            <div class="feature-icon feature-icon--green"></div>
+            <h3 class="feature-title">Diagnostic IA des Cultures</h3>
+            <p class="feature-body">Photographiez votre culture et obtenez un diagnostic instantané grâce à  AI — détection de maladies, score de santé, et recommandations agronomiques.</p>
+            <a href="/upload" class="feature-link">Analyser une culture →</a>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon feature-icon--blue"></div>
+            <h3 class="feature-title">Météo & Risques Agricoles</h3>
+            <p class="feature-body">Prévisions météo par GPS avec évaluation du risque de maladies fongiques, conseils d'irrigation, et alertes pour votre province.</p>
+            <a href="/" class="feature-link">Vérifier la météo →</a>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon feature-icon--amber"></div>
+            <h3 class="feature-title">Cartographie GPS des Parcelles</h3>
+            <p class="feature-body">Délimitez vos champs par GPS en marchant autour ou en dessinant sur la carte. Calcul automatique de superficie, semences, engrais et rendements.</p>
+            <a href="/farm/" class="feature-link">Planifier ma ferme →</a>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon feature-icon--purple"></div>
+            <h3 class="feature-title">Calendrier des 3 Saisons</h3>
+            <p class="feature-body">Calendrier agricole adapté aux 3 saisons du Burundi (A, B, C) avec activités mensuelles, conditions optimales et risques par culture.</p>
+            <a href="/calendar" class="feature-link">Voir le calendrier →</a>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon feature-icon--teal"></div>
+            <h3 class="feature-title">Forum & Messagerie Directe</h3>
+            <p class="feature-body">Posez vos questions au forum communautaire. Échangez en privé avec des agronomes vérifiés et les services du MINAGRIE.</p>
+            <a href="/community/forum" class="feature-link">Rejoindre le forum →</a>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon feature-icon--rose"></div>
+            <h3 class="feature-title">Prix du Marché en Temps Réel</h3>
+            <p class="feature-body">Consultez les prix actuels par province et par culture, publiés par les agronomes vérifiés et les agents du gouvernement.</p>
+            <a href="/market" class="feature-link">Voir les prix →</a>
+        </div>
+    </div>
+</section>
+
+<!-- ── How it works ────────────────────────────────────────────── -->
+<section class="section section--alt" id="how">
+    <div>
+        <p class="section-eyebrow">Comment ça marche</p>
+        <h2 class="section-title">Simple comme une photo</h2>
+        <p class="section-body">En moins de 60 secondes, passez de la photo de votre culture au rapport complet avec diagnostic et recommandations.</p>
+    </div>
+    <div class="steps-grid">
+        <div class="step-item">
+            <div class="step-num">1</div>
+            <h3 class="step-title">Photographiez</h3>
+            <p class="step-body">Prenez une photo claire de votre culture malade depuis votre téléphone sous bonne lumière.</p>
+        </div>
+        <div class="step-item">
+            <div class="step-num">2</div>
+            <h3 class="step-title">Téléversez</h3>
+            <p class="step-body">Importez l'image directement depuis votre téléphone ou glissez-déposez sur la plateforme.</p>
+        </div>
+        <div class="step-item">
+            <div class="step-num">3</div>
+            <h3 class="step-title">L'IA Analyse</h3>
+            <p class="step-body"> AI analyse la photo et identifie les maladies, carences et problèmes de santé en quelques secondes.</p>
+        </div>
+        <div class="step-item">
+            <div class="step-num">4</div>
+            <h3 class="step-title">Agissez</h3>
+            <p class="step-body">Recevez un rapport détaillé avec diagnostic, score de santé, et recommandations de traitement personnalisées.</p>
+        </div>
+    </div>
+</section>
+
+<!-- ── About / mission section ────────────────────────────────── -->
+<section class="section" id="about">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center">
+        <div>
+            <p class="section-eyebrow">Notre Mission</p>
+            <h2 class="section-title">Moderniser l'agriculture burundaise</h2>
+            <p class="section-body" style="margin-bottom:20px">Smart Agriculture AI est développée pour aider les agriculteurs burundais à accéder aux outils technologiques modernes — gratuitement, en français, kirundi et anglais, sans connexion internet permanente.</p>
+            <p class="section-body">La plateforme est alignée avec les priorités du <strong>MINAGRIE</strong> (Ministère de l'Environnement, de l'Agriculture et de l'Élevage) pour soutenir la sécurité alimentaire nationale et l'augmentation de la production agricole.</p>
+            <div style="display:flex;gap:16px;margin-top:32px;flex-wrap:wrap">
+                <a href="/register" style="padding:12px 28px;background:var(--green);color:#fff;border-radius:6px;font-size:0.9rem;font-weight:500">Créer un Compte Gratuit</a>
+                <a href="/about" style="padding:12px 28px;border:1px solid var(--border);border-radius:6px;font-size:0.9rem;color:var(--text-muted)">En savoir plus</a>
+            </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+            <div style="background:var(--surface-2);border-radius:12px;padding:28px;text-align:center;border:1px solid var(--border)">
+                <p style="font-family:var(--font-display);font-size:2.8rem;color:var(--green);line-height:1">100%</p>
+                <p style="font-family:var(--font-mono);font-size:0.65rem;text-transform:uppercase;color:var(--text-muted);margin-top:6px">Gratuit pour les agriculteurs</p>
+            </div>
+            <div style="background:var(--surface-2);border-radius:12px;padding:28px;text-align:center;border:1px solid var(--border)">
+                <p style="font-family:var(--font-display);font-size:2.8rem;color:var(--green);line-height:1">3</p>
+                <p style="font-family:var(--font-mono);font-size:0.65rem;text-transform:uppercase;color:var(--text-muted);margin-top:6px">Langues supportées</p>
+            </div>
+            <div style="background:var(--green);border-radius:12px;padding:28px;text-align:center">
+                <p style="font-family:var(--font-display);font-size:2.8rem;color:#fff;line-height:1">18</p>
+                <p style="font-family:var(--font-mono);font-size:0.65rem;text-transform:uppercase;color:rgba(255,255,255,0.75);margin-top:6px">Provinces couvertes</p>
+            </div>
+            <div style="background:var(--surface-2);border-radius:12px;padding:28px;text-align:center;border:1px solid var(--border)">
+                <p style="font-family:var(--font-display);font-size:2.8rem;color:var(--green);line-height:1">24/7</p>
+                <p style="font-family:var(--font-mono);font-size:0.65rem;text-transform:uppercase;color:var(--text-muted);margin-top:6px">Disponible en permanence</p>
+            </div>
+        </div>
+    </div>
+    @media(max-width:800px){.about-inner{grid-template-columns:1fr!important;gap:40px!important}}
+</section>
+
+<!-- ── Partners ───────────────────────────────────────────────── -->
+<div class="section section--alt" style="padding-top:48px;padding-bottom:48px;text-align:center">
+    <p style="font-family:var(--font-mono);font-size:0.65rem;text-transform:uppercase;letter-spacing:0.14em;color:var(--text-muted);margin-bottom:8px">Aligné avec les priorités nationales</p>
+    <div class="partners-row">
+        <span class="partner-badge">MINAGRIE</span>
+        <span class="partner-badge">ISABU</span>
+        <span class="partner-badge">BPEAE</span>
+        <span class="partner-badge">FAO Burundi</span>
+        <span class="partner-badge"> AI</span>
+        <span class="partner-badge">Open-Meteo</span>
+    </div>
+</div>
+
+<!-- ── CTA section ────────────────────────────────────────────── -->
+<section class="cta-section">
+    <h2 class="cta-title">Prêt à transformer votre agriculture ?</h2>
+    <p class="cta-body">Rejoignez des milliers d'agriculteurs burundais qui utilisent Smart Agriculture AI pour améliorer leurs rendements, protéger leurs cultures et planifier leurs saisons.</p>
+    <div class="cta-actions">
+        <a href="/register" class="cta-btn-primary">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+            Créer un Compte Gratuit
+        </a>
+        <a href="/upload" class="cta-btn-secondary">Analyser une Culture</a>
+    </div>
+</section>
+
+<!-- ── Footer ─────────────────────────────────────────────────── -->
+<footer class="footer">
+    <div class="footer-grid">
+        <div>
+            <div class="footer-brand">
+                <span class="footer-logo-mark">SA</span>
+                <span class="footer-brand-name">Smart Agriculture AI</span>
+            </div>
+            <p class="footer-tagline">Autonomiser les agriculteurs burundais avec l'intelligence artificielle et les données agricoles de précision.</p>
+        </div>
+        <div>
+            <p class="footer-col-title">Plateforme</p>
+            <div class="footer-links">
+                <a href="/upload" class="footer-link-item">Analyser une Culture</a>
+                <a href="/farm/" class="footer-link-item">Planification Agricole</a>
+                <a href="/calendar" class="footer-link-item">Calendrier Agricole</a>
+                <a href="/diseases" class="footer-link-item">Bibliothèque Maladies</a>
+                <a href="/market" class="footer-link-item">Prix du Marché</a>
+            </div>
+        </div>
+        <div>
+            <p class="footer-col-title">Communauté</p>
+            <div class="footer-links">
+                <a href="/community/forum" class="footer-link-item">Forum Agricole</a>
+                <a href="/community/messages" class="footer-link-item">Messages</a>
+                <a href="/advice" class="footer-link-item">Conseils IA</a>
+                <a href="/map" class="footer-link-item">Carte des Maladies</a>
+            </div>
+        </div>
+        <div>
+            <p class="footer-col-title">Saisons Burundi</p>
+            <div class="footer-links">
+                <span class="footer-link-item">Saison A — Sep à Jan</span>
+                <span class="footer-link-item">Saison B — Fév à Jun</span>
+                <span class="footer-link-item">Saison C — Jun à Oct</span>
+                <span class="footer-link-item" style="margin-top:8px">FR · KIR · EN</span>
+            </div>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        <span>Smart Agriculture AI — Burundi © 2025</span>
+        <div style="display:flex;gap:12px;align-items:center">
+            <span class="gov-badge-footer">MINAGRIE</span>
+            <span> AI · OpenStreetMap · Open-Meteo</span>
+        </div>
+    </div>
+</footer>
+
+<script>
+/* ── Navbar scroll ───────────────────────────────────────── */
+var navbar = document.getElementById('navbar');
+window.addEventListener('scroll', function() {
+    navbar.classList.toggle('scrolled', window.scrollY > 60);
+});
+
+/* ── Mobile menu ────────────────────────────────────────── */
+document.getElementById('hamburger').addEventListener('click', function() {
+    document.getElementById('navLinks').classList.toggle('open');
+});
+
+/* ── Hero slider ────────────────────────────────────────── */
+var SLIDE_DURATION = 6000;
+var slides    = document.querySelectorAll('.slide');
+var dots      = document.querySelectorAll('.slider-dot');
+var counters  = document.querySelectorAll('.slide-counter-item');
+var current   = 0;
+var timer     = null;
+var total     = slides.length;
+
+function goTo(index) {
+    slides[current].classList.remove('active');
+    slides[current].classList.add('prev');
+    dots[current].classList.remove('active');
+    counters[current].classList.remove('active');
+    counters[current].style.cssText = '';
+
+    setTimeout(function() {
+        slides[current].classList.remove('prev');
+    }, 900);
+
+    current = (index + total) % total;
+
+    slides[current].classList.add('active');
+    dots[current].classList.add('active');
+    counters[current].classList.add('active');
+    counters[current].style.setProperty('--slide-duration', (SLIDE_DURATION / 1000) + 's');
+}
+
+function next() { goTo(current + 1); }
+function prev() { goTo(current - 1); }
+
+function startTimer() {
+    clearInterval(timer);
+    timer = setInterval(next, SLIDE_DURATION);
+}
+
+document.getElementById('sliderNext').addEventListener('click', function() { next(); startTimer(); });
+document.getElementById('sliderPrev').addEventListener('click', function() { prev(); startTimer(); });
+
+dots.forEach(function(dot) {
+    dot.addEventListener('click', function() { goTo(parseInt(dot.dataset.slide)); startTimer(); });
+});
+counters.forEach(function(bar) {
+    bar.addEventListener('click', function() { goTo(parseInt(bar.dataset.slide)); startTimer(); });
+});
+
+/* Keyboard navigation */
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowRight') { next(); startTimer(); }
+    if (e.key === 'ArrowLeft')  { prev(); startTimer(); }
+});
+
+/* Touch swipe */
+var touchStartX = 0;
+document.getElementById('heroSlider').addEventListener('touchstart', function(e) {
+    touchStartX = e.touches[0].clientX;
+}, {passive: true});
+document.getElementById('heroSlider').addEventListener('touchend', function(e) {
+    var dx = e.changedTouches[0].clientX - touchStartX;
+    if (Math.abs(dx) > 50) { dx < 0 ? next() : prev(); startTimer(); }
+}, {passive: true});
+
+/* Init counter fill */
+counters[0].style.setProperty('--slide-duration', (SLIDE_DURATION / 1000) + 's');
+startTimer();
+
+/* ── Smooth scroll ──────────────────────────────────────── */
+document.querySelectorAll('a[href^="#"]').forEach(function(a) {
+    a.addEventListener('click', function(e) {
+        var target = document.querySelector(a.getAttribute('href'));
+        if (target) { e.preventDefault(); target.scrollIntoView({behavior:'smooth'}); }
+    });
+});
+
+/* ── Intersection observer — animate features on scroll ── */
+var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+            entry.target.style.opacity = '1';
+            entry.target.style.transform = 'translateY(0)';
+        }
+    });
+}, {threshold: 0.1});
+
+document.querySelectorAll('.feature-card, .step-item').forEach(function(el, i) {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(30px)';
+    el.style.transition = 'opacity 0.5s ease ' + (i * 0.08) + 's, transform 0.5s ease ' + (i * 0.08) + 's';
+    observer.observe(el);
+});
+</script>
+</body>
+</html>

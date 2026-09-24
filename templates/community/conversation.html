@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}{{ partner.username }} — Messages{% endblock %}
+{% block content %}
+<div class="history-detail-header">
+    <a href="{{ url_for('community.inbox') }}" class="back-link">&larr; Messages</a>
+    <div style="display:flex;align-items:center;gap:10px">
+        <span class="forum-avatar forum-avatar--pro">{{ partner.username[0].upper() }}</span>
+        <div>
+            <p style="font-weight:500;font-size:0.9rem">{{ partner.username }}
+                {% if partner.is_verified_professional %}<span class="verified-badge">✓ Agronome Vérifié</span>{% endif %}
+                {% if partner.role in ['admin','government'] %}<span class="gov-badge">{{ partner.role|upper }}</span>{% endif %}
+            </p>
+            {% if partner.province %}<p style="font-family:var(--font-mono);font-size:0.65rem;color:var(--color-text-muted)">{{ partner.province }}</p>{% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Message thread -->
+<div class="dm-thread" id="dmThread">
+    {% if messages %}
+    {% for msg in messages %}
+    <div class="dm-bubble-wrap {% if msg.sender_id == current_user.id %}dm-bubble-wrap--mine{% else %}dm-bubble-wrap--theirs{% endif %}">
+        <div class="dm-bubble {% if msg.sender_id == current_user.id %}dm-bubble--mine{% else %}dm-bubble--theirs{% endif %}">
+            <p style="white-space:pre-wrap">{{ msg.body }}</p>
+            <span class="dm-time">{{ msg.created_at.strftime('%d %b %H:%M') }}{% if msg.sender_id==current_user.id and msg.is_read %} ✓✓{% endif %}</span>
+        </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div style="text-align:center;padding:48px;color:var(--color-text-faint);font-size:0.875rem">
+        Début de la conversation avec {{ partner.username }}.<br>Envoyez votre premier message.
+    </div>
+    {% endif %}
+</div>
+
+<!-- Message input -->
+<form method="POST" class="dm-input-form" id="dmForm">
+    <textarea name="body" id="dmInput" class="form-input" rows="3"
+              placeholder="Écrivez votre message..." required></textarea>
+    <button type="submit" class="btn btn--primary">Envoyer</button>
+</form>
+
+{% endblock %}
+{% block scripts %}
+<script>
+// Scroll to bottom of thread
+var thread = document.getElementById('dmThread');
+if (thread) thread.scrollTop = thread.scrollHeight;
+
+// Submit with Ctrl+Enter
+document.getElementById('dmInput').addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        document.getElementById('dmForm').submit();
+    }
+});
+</script>
+{% endblock %}

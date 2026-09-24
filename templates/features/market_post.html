@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Publier un Prix{% endblock %}
+{% block content %}
+<div class="auth-page"><div class="auth-card auth-card--wide">
+    <div class="auth-card-header">
+        <h1 class="auth-title">Publier un Prix du Marché</h1>
+        <p class="auth-subtitle">Les prix que vous publiez seront visibles par tous les agriculteurs de la province concernée.</p>
+    </div>
+    <form method="POST" class="auth-form">
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Culture <span class="form-required">*</span></label>
+                <input type="text" name="crop_name" class="form-input" required list="marketCropList" placeholder="Ex: Common Bean"/>
+                <datalist id="marketCropList">
+                    {% for c in crops %}<option value="{{ c.name }}">{{ c.name }} ({{ c.local_name }})</option>{% endfor %}
+                </datalist>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Prix (BIF/kg) <span class="form-required">*</span></label>
+                <input type="number" name="price_bif" class="form-input" required min="1" step="1" placeholder="Ex: 1500"/>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Province <span class="form-required">*</span></label>
+                <select name="province" class="form-input form-select" required>
+                    <option value="">Sélectionner...</option>
+                    {% for p in provinces %}<option value="{{ p }}">{{ p }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Marché (optionnel)</label>
+                <input type="text" name="market" class="form-input" placeholder="Ex: Marché de Gitega"/>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Notes (optionnel)</label>
+            <textarea name="notes" class="form-input" rows="2" placeholder="Ex: Prix stable, bonne qualité disponible..."></textarea>
+        </div>
+        <div style="display:flex;gap:12px">
+            <button type="submit" class="btn btn--primary">Publier le Prix</button>
+            <a href="{{ url_for('features.market') }}" class="btn btn--outline">Annuler</a>
+        </div>
+    </form>
+</div></div>
+{% endblock %}

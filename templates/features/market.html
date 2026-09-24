@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Prix du Marché{% endblock %}
+{% block content %}
+<section class="history-hero">
+    <div>
+        <h1 class="cal-title">Prix du Marché</h1>
+        <p class="cal-subtitle">Prix actuels des cultures par province — mis à jour par les agronomes et le gouvernement</p>
+    </div>
+    {% if can_post %}
+    <a href="{{ url_for('features.market_post') }}" class="btn btn--primary">+ Publier un Prix</a>
+    {% endif %}
+</section>
+
+<!-- Filters -->
+<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:24px">
+    <form method="GET" style="display:flex;gap:10px;flex-wrap:wrap;width:100%">
+        <select name="province" class="form-input form-select" style="flex:1;max-width:220px" onchange="this.form.submit()">
+            <option value="all" {% if current_province=='all' %}selected{% endif %}>Toutes les provinces</option>
+            {% for p in provinces %}<option value="{{ p }}" {% if current_province==p %}selected{% endif %}>{{ p }}</option>{% endfor %}
+        </select>
+        <select name="crop" class="form-input form-select" style="flex:1;max-width:220px" onchange="this.form.submit()">
+            <option value="all" {% if current_crop=='all' %}selected{% endif %}>Toutes les cultures</option>
+            {% for c in crops_with_prices %}<option value="{{ c }}" {% if current_crop==c %}selected{% endif %}>{{ c }}</option>{% endfor %}
+        </select>
+    </form>
+</div>
+
+{% if trends %}
+<!-- Price overview cards -->
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-bottom:28px">
+{% for crop, trend in trends.items() %}
+<div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:16px">
+    <p style="font-size:0.85rem;font-weight:500;margin-bottom:8px">{{ crop }}</p>
+    <p style="font-family:var(--font-display);font-size:1.6rem;color:var(--color-green);line-height:1">{{ "{:,.0f}".format(trend.avg) }}</p>
+    <p style="font-family:var(--font-mono);font-size:0.62rem;color:var(--color-text-muted)">BIF/kg (moy. 7j)</p>
+    <div style="display:flex;justify-content:space-between;margin-top:8px;font-family:var(--font-mono);font-size:0.65rem;color:var(--color-text-faint)">
+        <span>Min: {{ "{:,.0f}".format(trend.min) }}</span>
+        <span>Max: {{ "{:,.0f}".format(trend.max) }}</span>
+    </div>
+</div>
+{% endfor %}
+</div>
+{% endif %}
+
+{% if prices %}
+<div style="display:flex;flex-direction:column;gap:8px">
+{% for p in prices %}
+<div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:14px 18px">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:12px">
+            <div>
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px">
+                    <span style="font-size:0.9rem;font-weight:500">{{ p.crop_name }}</span>
+                    {% if p.local_name %}<span style="font-family:var(--font-mono);font-size:0.65rem;color:var(--color-text-muted)">{{ p.local_name }}</span>{% endif %}
+                </div>
+                <div style="font-size:0.78rem;color:var(--color-text-muted)">
+                    {{ p.province }}{% if p.market %} — {{ p.market }}{% endif %}
+                </div>
+            </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:16px">
+            <div style="text-align:right">
+                <p style="font-family:var(--font-display);font-size:1.5rem;color:var(--color-green);line-height:1">{{ "{:,.0f}".format(p.price_bif) }}</p>
+                <p style="font-family:var(--font-mono);font-size:0.62rem;color:var(--color-text-muted)">BIF/kg</p>
+            </div>
+            <div style="text-align:right">
+                <p style="font-size:0.72rem;color:var(--color-text-muted)">{{ p.poster.username }}
+                {% if p.poster.is_verified_professional %}<span class="verified-badge">✓</span>{% endif %}
+                {% if p.poster.role in ['government','admin'] %}<span class="gov-badge">GOV</span>{% endif %}
+                </p>
+                <p style="font-family:var(--font-mono);font-size:0.62rem;color:var(--color-text-faint)">{{ p.created_at.strftime('%d %b %Y') }}</p>
+            </div>
+            {% if current_user.is_authenticated and (current_user.id==p.posted_by or current_user.is_admin) %}
+            <form method="POST" action="{{ url_for('features.market_delete', price_id=p.id) }}" onsubmit="return confirm('Supprimer?')">
+                <button class="history-delete-btn">&times;</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+    {% if p.notes %}<p style="font-size:0.78rem;color:var(--color-text-muted);margin-top:8px;padding-top:8px;border-top:1px solid var(--color-border)">{{ p.notes }}</p>{% endif %}
+</div>
+{% endfor %}
+</div>
+{% else %}
+<div class="history-empty">
+    <div style="font-size:3rem"></div>
+    <p class="history-empty-title">Pas encore de prix publiés</p>
+    <p class="history-empty-body">Les agronomes vérifiés et le gouvernement peuvent publier les prix actuels du marché pour aider les agriculteurs à planifier leurs ventes.</p>
+    {% if can_post %}<a href="{{ url_for('features.market_post') }}" class="btn btn--primary">+ Publier un Prix</a>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

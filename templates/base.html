@@ -1,148 +1,206 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ current_lang }}" data-theme="{{ current_theme }}">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>{% block title %}Smart Agriculture AI{% endblock %}</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,300;400;500&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}" />
+    <link rel="preconnect" href="https://fonts.googleapis.com"/>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,300;400;500&display=swap" rel="stylesheet"/>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}"/>
     {% block head %}{% endblock %}
 </head>
 <body>
-    <!-- AI Analysis Loading Overlay — hidden until JS shows it -->
-    <div class="analysis-overlay" id="analysisOverlay" style="display:none">
-        <div class="analysis-overlay-inner">
-            <div class="analysis-spinner">
-                <div class="spinner-ring"></div>
-                <div class="spinner-ring spinner-ring--2"></div>
-                <div class="spinner-ring spinner-ring--3"></div>
-            </div>
-            <p class="analysis-overlay-title">Analysing Your Crop</p>
-            <p class="analysis-overlay-sub" id="analysisStep">Uploading image...</p>
-            <div class="analysis-steps">
-                <div class="analysis-step" id="step1">
-                    <span class="step-dot"></span>
-                    <span>Uploading image</span>
-                </div>
-                <div class="analysis-step" id="step2">
-                    <span class="step-dot"></span>
-                    <span>Running AI vision model</span>
-                </div>
-                <div class="analysis-step" id="step3">
-                    <span class="step-dot"></span>
-                    <span>Generating recommendations</span>
-                </div>
-                <div class="analysis-step" id="step4">
-                    <span class="step-dot"></span>
-                    <span>Preparing report</span>
-                </div>
-            </div>
+
+<div class="analysis-overlay" id="analysisOverlay" style="display:none">
+    <div class="analysis-overlay-inner">
+        <div class="analysis-spinner">
+            <div class="spinner-ring"></div>
+            <div class="spinner-ring spinner-ring--2"></div>
+            <div class="spinner-ring spinner-ring--3"></div>
+        </div>
+        <p class="analysis-overlay-title">{{ t('index.analyze_btn') }}</p>
+        <p class="analysis-overlay-sub" id="analysisStep">{{ t('index.step1_title') }}...</p>
+        <div class="analysis-steps">
+            <div class="analysis-step" id="step1"><span class="step-dot"></span><span>{{ t('index.step1_title') }}</span></div>
+            <div class="analysis-step" id="step2"><span class="step-dot"></span><span>{{ t('index.step2_title') }}</span></div>
+            <div class="analysis-step" id="step3"><span class="step-dot"></span><span>{{ t('index.step3_title') }}</span></div>
+            <div class="analysis-step" id="step4"><span class="step-dot"></span><span>{{ t('index.step3_title') }}</span></div>
         </div>
     </div>
-    <header class="site-header">
-        <a href="{{ url_for('index') }}" class="logo">
-            <span class="logo-mark">SA</span>
-            <div class="logo-text">
-                <span class="logo-primary">Smart Agriculture AI</span>
-                <span class="logo-tag">Burundi Agricultural Platform</span>
-            </div>
+</div>
+
+<header class="site-header">
+    <a href="{{ url_for('index') }}" class="logo">
+        <span class="logo-mark">SA</span>
+        <div class="logo-text">
+            <span class="logo-primary">Smart Agriculture AI</span>
+            <span class="logo-tag">Burundi Agricultural Platform</span>
+        </div>
+    </a>
+
+    <nav class="site-nav" id="desktopNav">
+        <a href="{{ url_for('index') }}" class="nav-link {% if request.endpoint=='index' %}nav-link--active{% endif %}">{{ t('nav.analyze') }}</a>
+        <a href="{{ url_for('farm.farm_list') }}" class="nav-link {% if request.blueprint=='farm' %}nav-link--active{% endif %}">{{ t('nav.farm_planning') }}</a>
+        <a href="{{ url_for('calendar') }}" class="nav-link {% if request.endpoint=='calendar' %}nav-link--active{% endif %}">{{ t('nav.calendar') }}</a>
+        <a href="{{ url_for('disease_library') }}" class="nav-link {% if request.endpoint=='disease_library' %}nav-link--active{% endif %}">{{ t('nav.diseases') }}</a>
+        <a href="{{ url_for('outbreak_map') }}" class="nav-link {% if request.endpoint=='outbreak_map' %}nav-link--active{% endif %}">{{ t('nav.map') }}</a>
+        <a href="{{ url_for('about') }}" class="nav-link {% if request.endpoint=='about' %}nav-link--active{% endif %}">{{ t('nav.about') }}</a>
+        <a href="{{ url_for('features.planting_advice') }}" class="nav-link {% if request.endpoint=='features.planting_advice' %}nav-link--active{% endif %}">Conseils</a>
+        <a href="{{ url_for('features.market') }}" class="nav-link {% if request.endpoint in ['features.market','features.market_post'] %}nav-link--active{% endif %}">Prix Marché</a>
+        <a href="{{ url_for('community.forum') }}" class="nav-link {% if request.blueprint=='community' and 'forum' in (request.endpoint or '') %}nav-link--active{% endif %}">Forum</a>
+        {% if current_user.is_authenticated %}
+        <a href="{{ url_for('community.inbox') }}" class="nav-link {% if request.endpoint in ['community.inbox','community.conversation'] %}nav-link--active{% endif %}" id="inboxLink">
+            Messages <span id="unreadBadge" style="display:none;background:#f87171;color:#fff;font-family:var(--font-mono);font-size:0.6rem;padding:1px 6px;border-radius:999px;margin-left:4px"></span>
         </a>
-        <nav class="site-nav">
-            <a href="{{ url_for('index') }}" class="nav-link {% if request.endpoint == 'index' %}nav-link--active{% endif %}">Analyze Crop</a>
-            <a href="{{ url_for('calendar') }}" class="nav-link {% if request.endpoint == 'calendar' %}nav-link--active{% endif %}">Crop Calendar</a>
-            <a href="{{ url_for('disease_library') }}" class="nav-link {% if request.endpoint == 'disease_library' %}nav-link--active{% endif %}">Disease Library</a>
-            <a href="{{ url_for('about') }}" class="nav-link {% if request.endpoint == 'about' %}nav-link--active{% endif %}">About</a>
-            {% if current_user.is_authenticated %}
-                {% if current_user.role in ['admin', 'government'] %}
-                <a href="{{ url_for('admin_dashboard') }}" class="nav-link {% if 'admin' in request.endpoint %}nav-link--active{% endif %}">Dashboard</a>
-                {% endif %}
-                <a href="{{ url_for('farm_history') }}" class="nav-link {% if 'history' in request.endpoint %}nav-link--active{% endif %}">My History</a>
-                <div class="nav-user-menu">
-                    <button class="nav-user-btn" id="userMenuBtn">
-                        <span class="nav-user-avatar">{{ current_user.username[0].upper() }}</span>
-                        <span class="nav-user-name">{{ current_user.username }}</span>
-                    </button>
-                    <div class="nav-user-dropdown" id="userDropdown" hidden>
-                        <div class="dropdown-header">
-                            <span class="dropdown-username">{{ current_user.username }}</span>
-                            <span class="dropdown-role role-pill role-pill--{{ current_user.role }}">{{ current_user.role }}</span>
-                        </div>
-                        <a href="{{ url_for('auth_profile') }}" class="dropdown-item">Edit Profile</a>
-                        <a href="{{ url_for('auth_logout') }}" class="dropdown-item dropdown-item--danger">Log Out</a>
-                    </div>
-                </div>
-            {% else %}
-                <a href="{{ url_for('auth_login') }}" class="btn btn--outline" style="padding:6px 16px;font-size:0.8rem;">Log In</a>
-                <a href="{{ url_for('auth_register') }}" class="btn btn--primary" style="padding:6px 16px;font-size:0.8rem;">Register</a>
+        <a href="{{ url_for('features.notifications') }}" class="nav-link {% if request.endpoint=='features.notifications' %}nav-link--active{% endif %}" id="notifLink">
+            🔔 <span id="notifBadge" style="display:none;background:#f87171;color:#fff;font-family:var(--font-mono);font-size:0.6rem;padding:1px 6px;border-radius:999px;margin-left:2px"></span>
+        </a>
+        {% endif %}
+        {% if current_user.is_authenticated %}
+            {% if current_user.role in ['admin','government'] %}
+            <a href="{{ url_for('admin_dashboard') }}" class="nav-link {% if 'admin' in (request.endpoint or '') %}nav-link--active{% endif %}">{{ t('nav.dashboard') }}</a>
+            <a href="{{ url_for('gov_farm_map') }}" class="nav-link {% if request.endpoint=='gov_farm_map' %}nav-link--active{% endif %}">{{ t('nav.farm_map') }}</a>
             {% endif %}
-            <span class="nav-badge">Beta</span>
-        </nav>
-        <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle menu">
-            <span></span><span></span><span></span>
+            <a href="{{ url_for('farm_history') }}" class="nav-link {% if 'history' in (request.endpoint or '') %}nav-link--active{% endif %}">{{ t('nav.history') }}</a>
+        {% endif %}
+
+        <!-- Theme toggle -->
+        <button class="nav-theme-btn" id="themeToggleBtn" onclick="toggleTheme()" title="Toggle light/dark mode" aria-label="Toggle theme">
+            <span id="themeIcon">{% if current_theme == 'light' %}🌙{% else %}☀️{% endif %}</span>
         </button>
-    </header>
-    <div class="mobile-nav" id="mobileNav" hidden>
-        <a href="{{ url_for('index') }}" class="mobile-nav-link">Analyze Crop</a>
-        <a href="{{ url_for('calendar') }}" class="mobile-nav-link">Crop Calendar</a>
-        <a href="{{ url_for('disease_library') }}" class="mobile-nav-link">Disease Library</a>
-        <a href="{{ url_for('about') }}" class="mobile-nav-link">About</a>
+
+        <!-- Language switcher -->
+        <div class="nav-lang-menu">
+            <button class="nav-lang-btn" id="langMenuBtn" aria-label="Language">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg>
+                <span>{{ current_lang|upper }}</span>
+            </button>
+            <div class="nav-lang-dropdown" id="langDropdown" hidden>
+                {% for code in supported_langs %}
+                <button class="lang-option {% if current_lang==code %}lang-option--active{% endif %}" data-lang="{{ code }}">{{ lang_names[code] }}</button>
+                {% endfor %}
+            </div>
+        </div>
+
+        {% if current_user.is_authenticated %}
+            <div class="nav-user-menu">
+                <button class="nav-user-btn" id="userMenuBtn" aria-label="User menu">
+                    <span class="nav-user-avatar">{{ current_user.username[0].upper() }}</span>
+                    <span class="nav-user-name">{{ current_user.username }}</span>
+                </button>
+                <div class="nav-user-dropdown" id="userDropdown" hidden>
+                    <div class="dropdown-header">
+                        <span class="dropdown-username">{{ current_user.username }}</span>
+                        <span class="role-pill role-pill--{{ current_user.role }}">{{ current_user.role }}</span>
+                    </div>
+                    <a href="{{ url_for('auth_profile') }}" class="dropdown-item">{{ t('nav.profile') }}</a>
+                    <a href="{{ url_for('auth_logout') }}" class="dropdown-item dropdown-item--danger">{{ t('nav.logout') }}</a>
+                </div>
+            </div>
+        {% else %}
+            <a href="{{ url_for('auth_login') }}" class="btn btn--outline nav-auth-btn">{{ t('nav.login') }}</a>
+            <a href="{{ url_for('auth_register') }}" class="btn btn--primary nav-auth-btn">{{ t('nav.register') }}</a>
+        {% endif %}
+        <span class="nav-badge">{{ t('nav.beta') }}</span>
+    </nav>
+
+    <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+    </button>
+</header>
+
+<!-- Mobile nav drawer -->
+<nav class="mobile-nav" id="mobileNav" aria-hidden="true" style="display:none">
+    <a href="{{ url_for('index') }}" class="mobile-nav-link">{{ t('nav.analyze') }}</a>
+    <a href="{{ url_for('farm.farm_list') }}" class="mobile-nav-link">{{ t('nav.farm_planning') }}</a>
+    <a href="{{ url_for('calendar') }}" class="mobile-nav-link">{{ t('nav.calendar') }}</a>
+    <a href="{{ url_for('disease_library') }}" class="mobile-nav-link">{{ t('nav.diseases') }}</a>
+    <a href="{{ url_for('outbreak_map') }}" class="mobile-nav-link">{{ t('nav.map') }}</a>
+    <a href="{{ url_for('about') }}" class="mobile-nav-link">{{ t('nav.about') }}</a>
+    <a href="{{ url_for('features.planting_advice') }}" class="mobile-nav-link">Conseils IA</a>
+    <a href="{{ url_for('features.market') }}" class="mobile-nav-link">Prix Marché</a>
+    <a href="{{ url_for('community.forum') }}" class="mobile-nav-link">Forum</a>
+    {% if current_user.is_authenticated %}
+    <a href="{{ url_for('community.inbox') }}" class="mobile-nav-link">Messages</a>
+    <a href="{{ url_for('features.notifications') }}" class="mobile-nav-link">Notifications</a>
+    {% endif %}
+    {% if current_user.is_authenticated %}
+        {% if current_user.role in ['admin','government'] %}
+        <a href="{{ url_for('admin_dashboard') }}" class="mobile-nav-link">{{ t('nav.dashboard') }}</a>
+        <a href="{{ url_for('gov_farm_map') }}" class="mobile-nav-link">{{ t('nav.farm_map') }}</a>
+        {% endif %}
+        <a href="{{ url_for('farm_history') }}" class="mobile-nav-link">{{ t('nav.history') }}</a>
+        <a href="{{ url_for('auth_profile') }}" class="mobile-nav-link">{{ t('nav.profile') }}</a>
+        <a href="{{ url_for('auth_logout') }}" class="mobile-nav-link mobile-nav-link--danger">{{ t('nav.logout') }}</a>
+    {% else %}
+        <a href="{{ url_for('auth_login') }}" class="mobile-nav-link">{{ t('nav.login') }}</a>
+        <a href="{{ url_for('auth_register') }}" class="mobile-nav-link mobile-nav-link--accent">{{ t('nav.register') }}</a>
+    {% endif %}
+    <div class="mobile-nav-lang">
+        {% for code in supported_langs %}
+        <button class="mobile-lang-btn {% if current_lang==code %}mobile-lang-btn--active{% endif %}" data-lang="{{ code }}">{{ lang_names[code] }}</button>
+        {% endfor %}
+        <button class="mobile-lang-btn" onclick="toggleTheme()" style="margin-left:auto">
+            <span id="mobileThemeIcon">{% if current_theme == 'light' %}🌙 Sombre{% else %}☀️ Clair{% endif %}</span>
+        </button>
     </div>
+</nav>
 
-    <main class="site-main">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <div class="flash-container">
-                    {% for category, message in messages %}
-                        <div class="flash flash--{{ category }}">
-                            <span class="flash-icon">{% if category == 'error' %}!{% else %}i{% endif %}</span>
-                            {{ message }}
-                        </div>
-                    {% endfor %}
-                </div>
-            {% endif %}
-        {% endwith %}
-
-        {% block content %}{% endblock %}
-    </main>
-
-    <footer class="site-footer">
-        <div class="footer-grid">
-            <div class="footer-brand">
-                <div class="footer-logo">
-                    <span class="logo-mark logo-mark--sm">SA</span>
-                    <span class="footer-brand-name">Smart Agriculture AI</span>
-                </div>
-                <p class="footer-tagline">Empowering Burundian farmers with artificial intelligence and precision agricultural data.</p>
+<main class="site-main">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flash-container">
+            {% for category, message in messages %}
+            <div class="flash flash--{{ category }}">
+                <span class="flash-icon">{% if category=='error' %}!{% else %}i{% endif %}</span>
+                {{ message }}
             </div>
-            <div class="footer-col">
-                <p class="footer-col-title">Platform</p>
-                <a href="{{ url_for('index') }}" class="footer-link">Crop Analysis</a>
-                <a href="{{ url_for('calendar') }}" class="footer-link">Crop Calendar</a>
-                <a href="{{ url_for('disease_library') }}" class="footer-link">Disease Library</a>
-                <a href="{{ url_for('about') }}" class="footer-link">About</a>
-            </div>
-            <div class="footer-col">
-                <p class="footer-col-title">Crops Supported</p>
-                <span class="footer-text">Common Bean &bull; Maize &bull; Cassava</span>
-                <span class="footer-text">Arabica Coffee &bull; Banana &bull; Rice</span>
-                <span class="footer-text">Sweet Potato &bull; Sorghum</span>
-            </div>
-            <div class="footer-col">
-                <p class="footer-col-title">Seasons</p>
-                <span class="footer-text">Season A: September – January</span>
-                <span class="footer-text">Season B: February – June</span>
-                <span class="footer-text">Data source: ISABU / FAO Burundi</span>
-            </div>
+            {% endfor %}
         </div>
-        <div class="footer-bottom">
-            <span>Smart Agriculture AI &mdash; Burundi &copy; 2025</span>
-            <span class="footer-bottom-right">AI Engine: Gemini 2.5 Flash &nbsp;&bull;&nbsp; Platform v4.0</span>
-        </div>
-    </footer>
+        {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+</main>
 
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-    {% block scripts %}{% endblock %}
+<footer class="site-footer">
+    <div class="footer-grid">
+        <div class="footer-brand">
+            <div class="footer-logo">
+                <span class="logo-mark logo-mark--sm">SA</span>
+                <span class="footer-brand-name">Smart Agriculture AI</span>
+            </div>
+            <p class="footer-tagline">{{ t('footer.tagline') }}</p>
+        </div>
+        <div class="footer-col">
+            <p class="footer-col-title">{{ t('footer.platform') }}</p>
+            <a href="{{ url_for('index') }}" class="footer-link">{{ t('nav.analyze') }}</a>
+            <a href="{{ url_for('farm.farm_list') }}" class="footer-link">{{ t('nav.farm_planning') }}</a>
+            <a href="{{ url_for('calendar') }}" class="footer-link">{{ t('nav.calendar') }}</a>
+            <a href="{{ url_for('disease_library') }}" class="footer-link">{{ t('nav.diseases') }}</a>
+            <a href="{{ url_for('outbreak_map') }}" class="footer-link">{{ t('nav.map') }}</a>
+            <a href="{{ url_for('about') }}" class="footer-link">{{ t('nav.about') }}</a>
+        </div>
+        <div class="footer-col">
+            <p class="footer-col-title">{{ t('footer.crops') }}</p>
+            <span class="footer-text">Common Bean &bull; Maize &bull; Cassava</span>
+            <span class="footer-text">Coffee &bull; Banana &bull; Rice</span>
+            <span class="footer-text">Sweet Potato &bull; Sorghum &bull; Potato</span>
+        </div>
+        <div class="footer-col">
+            <p class="footer-col-title">{{ t('footer.seasons') }}</p>
+            <span class="footer-text">{{ t('season.a') }}</span>
+            <span class="footer-text">{{ t('season.b') }}</span>
+            <span class="footer-text">{{ t('season.c') }}</span>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        <span>Smart Agriculture AI &mdash; Burundi &copy; 2025</span>
+        <span class="footer-bottom-right">AI: Gemini 2.5 Flash &nbsp;&bull;&nbsp; Platform v10.0</span>
+    </div>
+</footer>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block scripts %}{% endblock %}
 </body>
 </html>

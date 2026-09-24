@@ -1,57 +1,28 @@
 {% extends "base.html" %}
-{% block title %}Manage Users — Smart Agriculture AI{% endblock %}
 {% block content %}
-<section class="admin-hero">
-    <div>
-        <p class="hero-eyebrow">Admin</p>
-        <h1 class="cal-title">User Management</h1>
-        <p class="cal-subtitle">{{ users|length }} registered users</p>
-    </div>
-    <a href="{{ url_for('admin_dashboard') }}" class="btn btn--outline">&larr; Dashboard</a>
-</section>
-
-<div class="admin-data-card admin-data-card--full">
-    <table class="admin-table">
-        <thead>
-            <tr><th>Username</th><th>Email</th><th>Role</th><th>Province</th><th>Joined</th><th>Status</th><th>Actions</th></tr>
-        </thead>
-        <tbody>
-            {% for user in users %}
-            <tr>
-                <td><strong>{{ user.username }}</strong>{% if user.full_name %}<br><small style="color:var(--color-text-muted)">{{ user.full_name }}</small>{% endif %}</td>
-                <td class="mono" style="font-size:0.75rem">{{ user.email }}</td>
-                <td><span class="role-pill role-pill--{{ user.role }}">{{ user.role }}</span></td>
-                <td>{{ user.province or '—' }}</td>
-                <td class="mono" style="font-size:0.72rem">{{ user.created_at.strftime('%d %b %Y') }}</td>
-                <td>
-                    {% if user.is_active %}
-                    <span style="color:var(--color-green);font-size:0.75rem;font-family:var(--font-mono)">Active</span>
-                    {% else %}
-                    <span style="color:#f87171;font-size:0.75rem;font-family:var(--font-mono)">Inactive</span>
-                    {% endif %}
-                </td>
-                <td>
-                    {% if user.id != current_user.id %}
-                    <form method="POST" action="{{ url_for('admin_change_role', user_id=user.id) }}" style="display:inline;gap:4px;">
-                        <select name="role" class="form-input form-select" style="padding:3px 8px;font-size:0.72rem;width:auto;display:inline;">
-                            <option value="farmer"     {% if user.role=='farmer'     %}selected{% endif %}>Farmer</option>
-                            <option value="government" {% if user.role=='government' %}selected{% endif %}>Government</option>
-                            <option value="admin"      {% if user.role=='admin'      %}selected{% endif %}>Admin</option>
-                        </select>
-                        <button type="submit" class="btn btn--outline" style="padding:3px 10px;font-size:0.72rem;">Set</button>
-                    </form>
-                    <form method="POST" action="{{ url_for('admin_toggle_user', user_id=user.id) }}" style="display:inline;">
-                        <button type="submit" class="btn btn--outline" style="padding:3px 10px;font-size:0.72rem;color:{% if user.is_active %}#f87171{% else %}var(--color-green){% endif %}">
-                            {% if user.is_active %}Deactivate{% else %}Activate{% endif %}
-                        </button>
-                    </form>
-                    {% else %}
-                    <span style="font-size:0.72rem;color:var(--color-text-faint)">You</span>
-                    {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
+<section class="admin-hero"><h1 class="cal-title">{{ t('admin.manage_users') }}</h1><a href="{{ url_for('admin_dashboard') }}" class="btn btn--outline">&larr;</a></section>
+<table class="admin-table"><thead><tr><th>User</th><th>Role</th><th>Verified Pro</th><th>Province</th><th>Status</th><th>Actions</th></tr></thead>
+<tbody>{% for user in users %}<tr>
+<td>{{ user.username }}</td><td><span class="role-pill role-pill--{{ user.role }}">{{ user.role }}</span></td>
+<td>{% if user.is_verified_professional %}<span class="verified-badge">✓ Vérifié</span>{% else %}<span style="color:var(--color-text-faint);font-size:0.78rem">—</span>{% endif %}</td>
+<td>{{ user.province or '—' }}</td>
+<td>{% if user.is_active %}Active{% else %}Inactive{% endif %}</td>
+<td>{% if user.id!=current_user.id %}
+<form method="POST" action="{{ url_for('admin_change_role',uid=user.id) }}" style="display:inline"><select name="role" class="form-input" style="padding:4px 8px;font-size:0.75rem"><option value="farmer" {% if user.role=='farmer' %}selected{% endif %}>Farmer</option><option value="government" {% if user.role=='government' %}selected{% endif %}>Gov</option><option value="admin" {% if user.role=='admin' %}selected{% endif %}>Admin</option></select><button class="btn btn--outline" style="padding:4px 10px;font-size:0.72rem">Set</button></form>
+<button onclick="toggleVerified({{ user.id }}, this)" class="btn btn--outline" style="padding:4px 10px;font-size:0.72rem;{% if user.is_verified_professional %}color:var(--color-green){% endif %}">{% if user.is_verified_professional %}✓ Pro{% else %}Vérifier{% endif %}</button>
+<form method="POST" action="{{ url_for('admin_toggle_user',uid=user.id) }}" style="display:inline"><button class="btn btn--outline" style="padding:4px 10px;font-size:0.72rem">Toggle</button></form>
+{% endif %}</td>
+</tr>{% endfor %}</tbody></table>
+{% endblock %}
+{% block scripts %}
+<script>
+function toggleVerified(uid, btn) {
+    fetch('/community/admin/verify/' + uid, {method: 'POST'})
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+            btn.textContent = d.verified ? 'Pro' : 'Verifier';
+            btn.style.color = d.verified ? 'var(--color-green)' : '';
+        });
+}
+</script>
 {% endblock %}

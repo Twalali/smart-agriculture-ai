@@ -1,305 +1,57 @@
 {% extends "base.html" %}
-{% block title %}Admin Dashboard — Smart Agriculture AI{% endblock %}
-
+{% block title %}{{ t('admin.dashboard_title') }}{% endblock %}
 {% block content %}
 <section class="admin-hero">
-    <div>
-        <p class="hero-eyebrow">{{ current_user.role | title }} Access</p>
-        <h1 class="cal-title">National Agriculture Dashboard</h1>
-        <p class="cal-subtitle">
-            Live data from farmer analyses across Burundi &nbsp;&bull;&nbsp;
-            Last updated: <span class="mono">{{ now }}</span>
-        </p>
-    </div>
-    <div class="admin-hero-actions">
-        {% if current_user.is_admin %}
-        <a href="{{ url_for('admin_users') }}" class="btn btn--outline">Manage Users</a>
-        <a href="{{ url_for('admin_export_dataset') }}" class="btn btn--primary">Export CSV Dataset</a>
-        {% endif %}
-    </div>
+    <div><h1 class="cal-title">{{ t('admin.dashboard_title') }}</h1><p class="cal-subtitle mono">{{ now }}</p></div>
+    <div class="admin-hero-actions">{% if current_user.is_admin %}<a href="{{ url_for('admin_users') }}" class="btn btn--outline">{{ t('admin.manage_users') }}</a><a href="{{ url_for('admin_export_dataset') }}" class="btn btn--primary">{{ t('admin.export_csv') }}</a>{% endif %}</div>
 </section>
-
-<!-- KPI stats row -->
 <div class="admin-stats-grid">
-    <div class="admin-stat-card">
-        <span class="admin-stat-icon">&#9650;</span>
-        <span class="admin-stat-num">{{ total_analyses }}</span>
-        <span class="admin-stat-label">Total Analyses</span>
-    </div>
-    <div class="admin-stat-card">
-        <span class="admin-stat-icon" style="color:#60a5fa">&#9650;</span>
-        <span class="admin-stat-num" style="color:#60a5fa">{{ total_users }}</span>
-        <span class="admin-stat-label">Registered Farmers</span>
-    </div>
-    <div class="admin-stat-card">
-        <span class="admin-stat-icon" style="color:var(--color-amber)">&#9650;</span>
-        <span class="admin-stat-num" style="color:var(--color-amber)">{{ total_diseases }}</span>
-        <span class="admin-stat-label">Unique Diseases Tracked</span>
-    </div>
-    <div class="admin-stat-card">
-        <span class="admin-stat-icon" style="color:#a78bfa">&#9650;</span>
-        <span class="admin-stat-num" style="color:#a78bfa">{{ total_provinces }}</span>
-        <span class="admin-stat-label">Provinces Reporting</span>
-    </div>
-    <div class="admin-stat-card">
-        <span class="admin-stat-icon" style="color:#f87171">&#9650;</span>
-        <span class="admin-stat-num" style="color:#f87171">{{ critical_count }}</span>
-        <span class="admin-stat-label">Critical Cases</span>
-    </div>
-    <div class="admin-stat-card">
-        <span class="admin-stat-icon" style="color:var(--color-green)">&#9650;</span>
-        <span class="admin-stat-num" style="color:var(--color-green)">{{ avg_health }}</span>
-        <span class="admin-stat-label">Avg Health Score</span>
-    </div>
+    <div class="admin-stat-card"><span class="admin-stat-num">{{ total_analyses }}</span><span class="admin-stat-label">{{ t('admin.total_analyses') }}</span></div>
+    <div class="admin-stat-card"><span class="admin-stat-num" style="color:#60a5fa">{{ total_users }}</span><span class="admin-stat-label">{{ t('admin.registered_farmers') }}</span></div>
+    <div class="admin-stat-card"><span class="admin-stat-num" style="color:var(--color-amber)">{{ total_diseases }}</span><span class="admin-stat-label">Diseases</span></div>
+    <div class="admin-stat-card"><span class="admin-stat-num" style="color:#a78bfa">{{ total_provinces }}</span><span class="admin-stat-label">Provinces</span></div>
+    <div class="admin-stat-card"><span class="admin-stat-num" style="color:#f87171">{{ critical_count }}</span><span class="admin-stat-label">Critical</span></div>
+    <div class="admin-stat-card"><span class="admin-stat-num" style="color:var(--color-green)">{{ avg_health }}</span><span class="admin-stat-label">Avg Health</span></div>
 </div>
-
-<!-- Charts row -->
 <div class="admin-charts-grid">
-
-    <!-- Disease bar chart -->
-    <div class="admin-chart-card">
-        <p class="admin-data-title">Top Diseases by Frequency</p>
-        <canvas id="diseaseChart" height="220"></canvas>
-    </div>
-
-    <!-- Crop donut chart -->
-    <div class="admin-chart-card">
-        <p class="admin-data-title">Analyses by Crop Type</p>
-        <canvas id="cropChart" height="220"></canvas>
-    </div>
-
-    <!-- Status distribution -->
-    <div class="admin-chart-card">
-        <p class="admin-data-title">Health Status Distribution</p>
-        <canvas id="statusChart" height="220"></canvas>
-    </div>
-
-    <!-- Analyses over time -->
-    <div class="admin-chart-card admin-chart-card--wide">
-        <p class="admin-data-title">Analyses Over Last 30 Days</p>
-        <canvas id="timelineChart" height="120"></canvas>
-    </div>
-
+    <div class="admin-chart-card"><p class="admin-data-title">Diseases</p><canvas id="diseaseChart" height="220"></canvas></div>
+    <div class="admin-chart-card"><p class="admin-data-title">Crops</p><canvas id="cropChart" height="220"></canvas></div>
+    <div class="admin-chart-card"><p class="admin-data-title">Status</p><canvas id="statusChart" height="220"></canvas></div>
+    <div class="admin-chart-card admin-chart-card--wide"><p class="admin-data-title">Last 30 Days</p><canvas id="timelineChart" height="120"></canvas></div>
 </div>
-
-<!-- Province table + recent analyses -->
 <div class="admin-data-grid" style="margin-top:20px">
-
-    <!-- Province breakdown -->
     <div class="admin-data-card">
-        <p class="admin-data-title">Disease Reports by Province</p>
-        {% if top_provinces %}
-        <div class="admin-bar-list">
-            {% set max_p = top_provinces[0][1] %}
-            {% for province, count in top_provinces %}
-            <div class="admin-bar-row">
-                <span class="admin-bar-label">{{ province }}</span>
-                <div class="admin-bar-track">
-                    <div class="admin-bar-fill admin-bar-fill--blue"
-                         style="width:{{ (count / max_p * 100) | int }}%"></div>
-                </div>
-                <span class="admin-bar-count">{{ count }}</span>
-            </div>
-            {% endfor %}
-        </div>
-        {% else %}
-        <p class="admin-empty">No province data yet. Farmers need to set their province in their profile.</p>
-        {% endif %}
-    </div>
-
-    <!-- Season split -->
-    <div class="admin-data-card">
-        <p class="admin-data-title">Season A vs Season B</p>
+        <p class="admin-data-title">{{ t('season.a') }} &middot; {{ t('season.b') }} &middot; {{ t('season.c') }}</p>
         <div class="season-split">
-            <div class="season-block season-block--a">
-                <span class="season-label">Season A</span>
-                <span class="season-num">{{ season_a }}</span>
-                <span class="season-sub">Sep – Jan</span>
-            </div>
+            <div class="season-block season-block--a"><span class="season-label">A</span><span class="season-num">{{ season_a }}</span></div>
             <div class="season-divider"></div>
-            <div class="season-block season-block--b">
-                <span class="season-label">Season B</span>
-                <span class="season-num">{{ season_b }}</span>
-                <span class="season-sub">Feb – Jun</span>
-            </div>
+            <div class="season-block season-block--b"><span class="season-label">B</span><span class="season-num">{{ season_b }}</span></div>
+            <div class="season-divider"></div>
+            <div class="season-block season-block--c"><span class="season-label">C</span><span class="season-num">{{ season_c }}</span></div>
         </div>
-        <div class="season-bar">
-            {% set total_s = season_a + season_b %}
-            {% if total_s > 0 %}
-            <div class="season-bar-a" style="width:{{ (season_a / total_s * 100)|int }}%"></div>
-            <div class="season-bar-b" style="width:{{ (season_b / total_s * 100)|int }}%"></div>
-            {% endif %}
-        </div>
+        <div class="season-bar">{% set ts=season_a+season_b+season_c %}{% if ts>0 %}<div class="season-bar-a" style="width:{{ (season_a/ts*100)|int }}%"></div><div class="season-bar-b" style="width:{{ (season_b/ts*100)|int }}%"></div><div class="season-bar-c" style="width:{{ (season_c/ts*100)|int }}%"></div>{% endif %}</div>
     </div>
-
-    <!-- Recent analyses table -->
+    <div class="admin-data-card">
+        <p class="admin-data-title">Provinces</p>
+        <div class="admin-bar-list">{% set mp=(top_provinces[0][1] if top_provinces else 1) %}{% for province,count in top_provinces %}<div class="admin-bar-row"><span class="admin-bar-label">{{ province }}</span><div class="admin-bar-track"><div class="admin-bar-fill admin-bar-fill--blue" style="width:{{ (count/mp*100)|int }}%"></div></div><span class="admin-bar-count">{{ count }}</span></div>{% endfor %}</div>
+    </div>
     <div class="admin-data-card admin-data-card--full">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-            <p class="admin-data-title" style="margin:0">Recent Analyses</p>
-            <input type="text" id="tableSearch" class="lib-search"
-                   style="width:200px;padding:6px 12px"
-                   placeholder="Search..." autocomplete="off" />
-        </div>
-        <table class="admin-table" id="recentTable">
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Farmer</th>
-                    <th>Crop</th>
-                    <th>Health</th>
-                    <th>Status</th>
-                    <th>Diseases</th>
-                    <th>Province</th>
-                    <th>Season</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for a in recent %}
-                <tr>
-                    <td class="mono">{{ a.created_at.strftime('%d %b %Y') }}</td>
-                    <td>{{ a.user.username if a.user else 'anonymous' }}</td>
-                    <td>{{ a.crop_type or '—' }}</td>
-                    <td>
-                        <div style="display:flex;align-items:center;gap:8px">
-                            <div style="width:48px;height:5px;background:var(--color-surface-2);border-radius:999px;overflow:hidden">
-                                <div style="width:{{ (a.health_score or 0)|int }}%;height:100%;background:{% if (a.health_score or 0) >= 75 %}var(--color-green){% elif (a.health_score or 0) >= 50 %}var(--color-amber){% else %}#f87171{% endif %};border-radius:inherit"></div>
-                            </div>
-                            <span class="mono" style="font-size:0.72rem">{{ (a.health_score or 0)|int }}</span>
-                        </div>
-                    </td>
-                    <td>
-                        <span class="status-pill status-pill--{{ a.overall_status or 'unknown' }}">
-                            {{ (a.overall_status or 'unknown')|replace('_',' ')|title }}
-                        </span>
-                    </td>
-                    <td style="font-size:0.75rem;color:var(--color-text-muted)">
-                        {% set dlist = a.detections_list %}
-                        {% if dlist %}
-                            {{ dlist[0].name }}{% if dlist|length > 1 %} +{{ dlist|length - 1 }}{% endif %}
-                        {% else %}—{% endif %}
-                    </td>
-                    <td>{{ a.province or '—' }}</td>
-                    <td class="mono" style="font-size:0.72rem">{{ a.season or '—' }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <p class="admin-data-title">{{ t('admin.recent_analyses') }}</p>
+        <table class="admin-table"><thead><tr><th>Date</th><th>Farmer</th><th>Crop</th><th>Health</th><th>Status</th><th>Province</th></tr></thead>
+        <tbody>{% for a in recent %}<tr><td class="mono">{{ a.created_at.strftime('%d %b') }}</td><td>{{ a.user.username if a.user else '—' }}</td><td>{{ a.crop_type }}</td><td>{{ (a.health_score or 0)|int }}</td><td><span class="status-pill status-pill--{{ a.overall_status }}">{{ t('status.'+(a.overall_status or 'unknown')) }}</span></td><td>{{ a.province or '—' }}</td></tr>{% endfor %}</tbody></table>
     </div>
 </div>
 {% endblock %}
-
 {% block scripts %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script>
-const COLORS = {
-    green:  '#8cb950', amber:  '#c9933a',
-    red:    '#f87171', blue:   '#60a5fa',
-    purple: '#a78bfa', teal:   '#34d399',
-    pink:   '#f472b6', orange: '#fb923c',
-};
-const GRID_COLOR  = 'rgba(140,185,80,0.08)';
-const TEXT_COLOR  = '#7a9460';
-const FONT_FAMILY = "'DM Mono', monospace";
-
-Chart.defaults.color = TEXT_COLOR;
-Chart.defaults.font.family = FONT_FAMILY;
-Chart.defaults.font.size   = 11;
-
-// ── Disease bar chart ────────────────────────────────────────
-const diseaseLabels = {{ top_diseases | map(attribute=0) | list | tojson }};
-const diseaseCounts = {{ top_diseases | map(attribute=1) | list | tojson }};
-new Chart(document.getElementById('diseaseChart'), {
-    type: 'bar',
-    data: {
-        labels: diseaseLabels,
-        datasets: [{
-            data: diseaseCounts,
-            backgroundColor: diseaseLabels.map((_, i) =>
-                [COLORS.red, COLORS.amber, COLORS.orange, COLORS.purple,
-                 COLORS.pink, COLORS.blue, COLORS.teal, COLORS.green,
-                 '#e879f9','#38bdf8'][i % 10] + 'cc'),
-            borderRadius: 4, borderSkipped: false,
-        }]
-    },
-    options: {
-        indexAxis: 'y', plugins: { legend: { display: false } },
-        scales: {
-            x: { grid: { color: GRID_COLOR }, ticks: { stepSize: 1 } },
-            y: { grid: { display: false } }
-        }
-    }
-});
-
-// ── Crop donut ───────────────────────────────────────────────
-const cropLabels = {{ top_crops | map(attribute=0) | list | tojson }};
-const cropCounts = {{ top_crops | map(attribute=1) | list | tojson }};
-new Chart(document.getElementById('cropChart'), {
-    type: 'doughnut',
-    data: {
-        labels: cropLabels,
-        datasets: [{
-            data: cropCounts,
-            backgroundColor: [COLORS.green, COLORS.amber, COLORS.blue,
-                              COLORS.purple, COLORS.red, COLORS.teal,
-                              COLORS.pink, COLORS.orange],
-            borderColor: '#141a0f', borderWidth: 3,
-        }]
-    },
-    options: {
-        plugins: { legend: { position: 'right', labels: { boxWidth: 12, padding: 12 } } },
-        cutout: '62%',
-    }
-});
-
-// ── Status doughnut ──────────────────────────────────────────
-const statusData = {{ status_counts | tojson }};
-new Chart(document.getElementById('statusChart'), {
-    type: 'doughnut',
-    data: {
-        labels: Object.keys(statusData).map(s => s.replace('_',' ')),
-        datasets: [{
-            data: Object.values(statusData),
-            backgroundColor: [COLORS.green, COLORS.amber, COLORS.red, '#f87171dd'],
-            borderColor: '#141a0f', borderWidth: 3,
-        }]
-    },
-    options: {
-        plugins: { legend: { position: 'right', labels: { boxWidth: 12, padding: 12 } } },
-        cutout: '62%',
-    }
-});
-
-// ── Timeline line chart ──────────────────────────────────────
-const timelineDates  = {{ timeline_dates  | tojson }};
-const timelineCounts = {{ timeline_counts | tojson }};
-new Chart(document.getElementById('timelineChart'), {
-    type: 'line',
-    data: {
-        labels: timelineDates,
-        datasets: [{
-            label: 'Analyses',
-            data: timelineCounts,
-            borderColor: COLORS.green,
-            backgroundColor: 'rgba(140,185,80,0.08)',
-            fill: true, tension: 0.4,
-            pointRadius: 3, pointBackgroundColor: COLORS.green,
-        }]
-    },
-    options: {
-        plugins: { legend: { display: false } },
-        scales: {
-            x: { grid: { color: GRID_COLOR } },
-            y: { grid: { color: GRID_COLOR }, ticks: { stepSize: 1 } }
-        }
-    }
-});
-
-// ── Table search ─────────────────────────────────────────────
-document.getElementById('tableSearch').addEventListener('input', function () {
-    const q = this.value.toLowerCase();
-    document.querySelectorAll('#recentTable tbody tr').forEach(function (row) {
-        row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
-    });
-});
+var GC='rgba(140,185,80,0.08)',TC='#7a9460';
+Chart.defaults.color=TC;Chart.defaults.font.family="'DM Mono',monospace";
+var C=['#f87171cc','#c9933acc','#fb923ccc','#a78bfacc','#f472b6cc','#60a5facc','#34d399cc','#8cb950cc'];
+new Chart(document.getElementById('diseaseChart'),{type:'bar',data:{labels:{{ top_diseases|map(attribute=0)|list|tojson }},datasets:[{data:{{ top_diseases|map(attribute=1)|list|tojson }},backgroundColor:C,borderRadius:4}]},options:{indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{grid:{color:GC}},y:{grid:{display:false}}}}});
+new Chart(document.getElementById('cropChart'),{type:'doughnut',data:{labels:{{ top_crops|map(attribute=0)|list|tojson }},datasets:[{data:{{ top_crops|map(attribute=1)|list|tojson }},backgroundColor:C,borderColor:'#141a0f',borderWidth:3}]},options:{plugins:{legend:{position:'right'}},cutout:'62%'}});
+var sc={{ status_counts|tojson }};
+new Chart(document.getElementById('statusChart'),{type:'doughnut',data:{labels:Object.keys(sc),datasets:[{data:Object.values(sc),backgroundColor:['#8cb950','#c9933a','#e8706a','#f87171'],borderColor:'#141a0f',borderWidth:3}]},options:{plugins:{legend:{position:'right'}},cutout:'62%'}});
+new Chart(document.getElementById('timelineChart'),{type:'line',data:{labels:{{ timeline_dates|tojson }},datasets:[{data:{{ timeline_counts|tojson }},borderColor:'#8cb950',backgroundColor:GC,fill:true,tension:0.4}]},options:{plugins:{legend:{display:false}},scales:{x:{grid:{color:GC}},y:{grid:{color:GC}}}}});
 </script>
 {% endblock %}

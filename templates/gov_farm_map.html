@@ -1,0 +1,301 @@
+{% extends "base.html" %}
+{% block title %}Carte des Fermes — Gouvernement{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<style>
+[id="govMap"]{height:540px;border-radius:8px;border:1px solid var(--color-border);z-index:1}
+.leaflet-container{background:#1c2416}
+@media(max-width:640px){[id="govMap"]{height:65vh;min-height:380px}}
+/* Dark theme Leaflet popups */
+.leaflet-popup-content-wrapper{background:#1c2416;border:1px solid rgba(140,185,80,0.25);border-radius:8px;box-shadow:0 4px 24px rgba(0,0,0,0.5);color:#dce8cc;padding:0}
+.leaflet-popup-content{margin:14px 16px;line-height:1.5}
+.leaflet-popup-tip{background:#1c2416}
+.leaflet-popup-close-button{color:#7a9460!important;font-size:18px!important;top:6px!important;right:8px!important}
+.leaflet-popup-close-button:hover{color:#8cb950!important}
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="admin-hero">
+    <div>
+        <h1 class="cal-title">{{ t('nav.farm_map') }}</h1>
+        <p class="cal-subtitle">Toutes les fermes enregistrées au Burundi</p>
+    </div>
+    <a href="{{ url_for('admin_dashboard') }}" class="btn btn--outline">&larr; Dashboard</a>
+</section>
+
+<!-- KPI row -->
+<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--color-border);border:1px solid var(--color-border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:24px">
+    <div style="background:var(--color-surface);padding:18px;text-align:center">
+        <div style="font-family:var(--font-display);font-size:2rem;color:var(--color-green)">{{ total_farms }}</div>
+        <div style="font-family:var(--font-mono);font-size:0.6rem;text-transform:uppercase;color:var(--color-text-muted)">Fermes</div>
+    </div>
+    <div style="background:var(--color-surface);padding:18px;text-align:center">
+        <div style="font-family:var(--font-display);font-size:2rem;color:#60a5fa">{{ total_fields }}</div>
+        <div style="font-family:var(--font-mono);font-size:0.6rem;text-transform:uppercase;color:var(--color-text-muted)">Champs</div>
+    </div>
+    <div style="background:var(--color-surface);padding:18px;text-align:center">
+        <div style="font-family:var(--font-display);font-size:2rem;color:var(--color-green)">{{ gps_fields }}</div>
+        <div style="font-family:var(--font-mono);font-size:0.6rem;text-transform:uppercase;color:var(--color-text-muted)">GPS Précis</div>
+    </div>
+    <div style="background:var(--color-surface);padding:18px;text-align:center">
+        <div style="font-family:var(--font-display);font-size:2rem;color:var(--color-amber)">{{ no_gps_fields }}</div>
+        <div style="font-family:var(--font-mono);font-size:0.6rem;text-transform:uppercase;color:var(--color-text-muted)">Sans GPS</div>
+    </div>
+    <div style="background:var(--color-surface);padding:18px;text-align:center">
+        <div style="font-family:var(--font-display);font-size:2rem;color:var(--color-amber)">{{ total_area }}</div>
+        <div style="font-family:var(--font-mono);font-size:0.6rem;text-transform:uppercase;color:var(--color-text-muted)">Hectares</div>
+    </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 300px;gap:20px;align-items:start">
+    <div>
+        <!-- Map legend -->
+        <div style="display:flex;align-items:center;gap:20px;padding:10px 16px;background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);margin-bottom:12px;flex-wrap:wrap">
+            <span style="font-family:var(--font-mono);font-size:0.65rem;color:var(--color-text-faint)">LÉGENDE:</span>
+            <div style="display:flex;align-items:center;gap:6px;font-size:0.78rem">
+                <span style="width:14px;height:14px;border-radius:50%;background:#8cb950;border:2px solid #fff;display:inline-block"></span>
+                Champ GPS précis
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;font-size:0.78rem">
+                <span style="width:14px;height:14px;border-radius:3px;background:#c9933a;border:2px solid #fff;display:inline-block"></span>
+                Ferme sans GPS (province approx.)
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;font-size:0.78rem">
+                <span style="width:12px;height:12px;border-radius:50%;background:#4a6e34;border:1.5px solid #fff;display:inline-block;opacity:0.7"></span>
+                Ferme sans champs cartographiés
+            </div>
+        </div>
+
+        <!-- Map -->
+        <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);overflow:hidden">
+            <div id="govMap"></div>
+        </div>
+
+        <!-- Crop filter -->
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px" id="cropFilterBar">
+            <button class="cal-filter-btn active" onclick="filterMarkers('all',this)">Tous</button>
+        </div>
+    </div>
+
+    <!-- Province sidebar -->
+    <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);overflow:hidden">
+        <div style="padding:12px 16px;border-bottom:1px solid var(--color-border);background:var(--color-surface-2)">
+            <p style="font-family:var(--font-mono);font-size:0.65rem;text-transform:uppercase;color:var(--color-text-muted)">Par Province</p>
+        </div>
+        <div style="max-height:520px;overflow-y:auto">
+            {% for p in province_summary|sort(attribute='area_ha',reverse=True) %}
+            <div style="padding:12px 16px;border-bottom:1px solid var(--color-border);cursor:pointer"
+                 onclick="focusProvince('{{ p.province }}')"
+                 onmouseover="this.style.background='var(--color-surface-2)'"
+                 onmouseout="this.style.background=''">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+                    <span style="font-size:0.85rem;font-weight:500">{{ p.province }}</span>
+                    <span style="font-family:var(--font-mono);font-size:0.7rem;color:var(--color-green)">{{ p.area_ha }} ha</span>
+                </div>
+                <div style="display:flex;gap:10px;font-family:var(--font-mono);font-size:0.62rem;color:var(--color-text-muted);margin-bottom:4px">
+                    <span>{{ p.fields }} champ(s)</span>
+                    <span>{{ p.farmer_count }} agriculteur(s)</span>
+                </div>
+                <div style="display:flex;gap:6px;flex-wrap:wrap">
+                    {% if p.gps_fields > 0 %}
+                    <span style="font-family:var(--font-mono);font-size:0.6rem;padding:1px 7px;background:rgba(140,185,80,0.15);color:var(--color-green);border-radius:999px">{{ p.gps_fields }} GPS</span>
+                    {% endif %}
+                    {% if p.no_gps_fields > 0 %}
+                    <span style="font-family:var(--font-mono);font-size:0.6rem;padding:1px 7px;background:rgba(201,147,58,0.15);color:var(--color-amber);border-radius:999px">{{ p.no_gps_fields }} sans GPS</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% else %}
+            <div style="padding:32px;text-align:center;color:var(--color-text-faint);font-size:0.8rem">
+                Aucune ferme enregistrée.
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Farm table -->
+<div style="margin-top:24px">
+    <div class="admin-data-card admin-data-card--full">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <p class="admin-data-title" style="margin:0">Toutes les Fermes</p>
+            <input type="text" id="farmSearch" class="lib-search" style="width:200px;padding:6px 12px" placeholder="Rechercher..." autocomplete="off"/>
+        </div>
+        <table class="admin-table" id="farmTable">
+            <thead><tr><th>Agriculteur</th><th>Ferme</th><th>Province</th><th>Champs</th><th>Superficie</th><th>GPS</th><th>Cultures</th><th>Date</th></tr></thead>
+            <tbody>
+            {% for farm in farms %}
+            <tr>
+                <td><strong>{{ farm.owner.username }}</strong>{% if farm.owner.full_name %}<br><small style="color:var(--color-text-muted)">{{ farm.owner.full_name }}</small>{% endif %}</td>
+                <td>{{ farm.name }}</td>
+                <td>{{ farm.province or '—' }}{% if farm.commune %}<br><small style="color:var(--color-text-muted)">{{ farm.commune }}</small>{% endif %}</td>
+                <td class="mono">{{ farm.total_fields }}</td>
+                <td class="mono">{{ "%.2f"|format(farm.total_area_ha) }} ha</td>
+                <td>
+                    {% set gps_count = farm.fields|selectattr('center_lat')|list|length %}
+                    {% if gps_count > 0 %}
+                    <span style="color:var(--color-green);font-family:var(--font-mono);font-size:0.72rem">{{ gps_count }} ✓</span>
+                    {% else %}
+                    <span style="color:var(--color-text-faint);font-family:var(--font-mono);font-size:0.72rem">—</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% set crops = farm.fields|map(attribute='crop')|select|unique|list %}
+                    {% for crop in crops[:2] %}<span class="about-crop-tag" style="font-size:0.62rem;padding:1px 7px">{{ crop }}</span>{% endfor %}
+                    {% if crops|length > 2 %}<span style="font-size:0.7rem;color:var(--color-text-muted)">+{{ crops|length-2 }}</span>{% endif %}
+                </td>
+                <td class="mono" style="font-size:0.72rem">{{ farm.created_at.strftime('%d %b %Y') }}</td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+var FEATURES = {{ features_json|safe }};
+
+// Map setup
+var map = L.map('govMap').setView([-3.3731, 29.9189], 8);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution:'© OpenStreetMap', maxZoom:19}).addTo(map);
+L.control.layers({
+    'Street Map': L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution:'© OSM'}),
+    'Satellite':  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {attribution:'© Esri'})
+}).addTo(map);
+
+// Crop colour map
+var cropColors = {
+    'Common Bean':'#8cb950','Maize':'#f59e0b','Cassava':'#f97316',
+    'Arabica Coffee':'#92400e','Sweet Potato':'#ec4899','Banana':'#eab308',
+    'Rice':'#06b6d4','Sorghum':'#a78bfa','Irish Potato':'#34d399','default':'#60a5fa'
+};
+function cropColor(crop){ return cropColors[crop] || cropColors['default']; }
+
+var allMarkers = [];
+var cropSet = new Set();
+
+// Province centroid coords (JS side for focusProvince)
+var PROVINCE_COORDS = {
+    'Gitega':[-3.427,29.926],'Kayanza':[-2.930,29.631],'Ngozi':[-2.909,29.830],
+    'Bujumbura Mairie':[-3.387,29.363],'Bujumbura Rural':[-3.4,29.3],
+    'Kirundo':[-2.576,30.094],'Muyinga':[-2.848,30.336],'Karuzi':[-3.101,30.163],
+    'Cankuzo':[-3.221,30.555],'Ruyigi':[-3.477,30.243],'Rutana':[-3.928,29.992],
+    'Makamba':[-4.138,29.804],'Rumonge':[-3.975,29.438],'Bururi':[-3.949,29.623],
+    'Mwaro':[-3.5,29.65],'Muramvya':[-3.267,29.617],'Cibitoke':[-2.889,29.120],'Bubanza':[-3.083,29.383],
+};
+
+FEATURES.features.forEach(function(f) {
+    var p   = f.properties;
+    var lng = f.geometry.coordinates[0];
+    var lat = f.geometry.coordinates[1];
+
+    var marker;
+    var color = p.kind === 'exact' ? (cropColor(p.crop)) : p.kind === 'province' ? '#c9933a' : '#7a9460';
+
+    // Build crops string
+    var cropsStr = (p.all_crops && p.all_crops.length > 0)
+        ? p.all_crops.join(', ')
+        : (p.crop || 'Non défini');
+
+    // Build popup content — same structure for all 3 kinds
+    var kindLabel = p.kind === 'exact' ? '📍 GPS précis'
+                  : p.kind === 'province' ? '📌 Position approximative (province)'
+                  : '⚪ Ferme sans champs cartographiés';
+
+    var popupHtml =
+        '<div style="font-family:\'DM Sans\',sans-serif;min-width:210px;background:#1c2416;color:#dce8cc;border-radius:6px;padding:4px 2px">' +
+        '<div style="font-size:0.62rem;font-family:monospace;color:#3d5230;margin-bottom:6px">' + kindLabel + '</div>' +
+        '<strong style="font-size:0.95rem;color:#dce8cc;display:block;margin-bottom:2px">' + p.farm_name + '</strong>' +
+        '<div style="font-size:0.78rem;color:#8cb950;margin-bottom:6px">👤 ' + p.farmer + (p.full_name ? ' (' + p.full_name + ')' : '') + '</div>' +
+        '<div style="font-size:0.78rem;color:#7a9460;margin-bottom:2px">📍 ' + p.province + (p.commune ? ', ' + p.commune : '') + '</div>' +
+        (cropsStr !== 'Non défini' ? '<div style="font-size:0.78rem;color:#7a9460;margin-bottom:2px">🌱 ' + cropsStr + '</div>' : '') +
+        (p.total_fields > 0 ? '<div style="font-size:0.78rem;color:#7a9460;margin-bottom:2px">🗺 ' + p.total_fields + ' champ(s) — ' + p.total_area_ha + ' ha</div>' : '<div style="font-size:0.78rem;color:#3d5230">Aucun champ cartographié</div>') +
+        (p.season ? '<div style="font-size:0.7rem;color:#3d5230;margin-top:4px">Saison ' + p.season + '</div>' : '') +
+        '</div>';
+
+    if (p.kind === 'exact') {
+        // Solid coloured circle
+        marker = L.circleMarker([lat, lng], {
+            radius: 10, color: '#fff', weight: 2,
+            fillColor: color, fillOpacity: 0.9
+        });
+    } else if (p.kind === 'province') {
+        // Amber square — farm without GPS
+        marker = L.marker([lat, lng], {
+            icon: L.divIcon({
+                className: '',
+                html: '<div style="width:14px;height:14px;background:#c9933a;border:2px solid #fff;border-radius:3px;box-shadow:0 2px 6px rgba(0,0,0,0.5)"></div>',
+                iconSize: [14,14], iconAnchor: [7,7],
+            })
+        });
+    } else {
+        // Grey circle — farm with no fields at all
+        marker = L.circleMarker([lat, lng], {
+            radius: 7, color: '#fff', weight: 1.5,
+            fillColor: '#4a6e34', fillOpacity: 0.6,
+            dashArray: '4'
+        });
+    }
+
+    marker.bindPopup(popupHtml);
+    marker._kind     = p.kind;
+    marker._crop     = p.crop;
+    marker._province = p.province;
+    marker._farmer   = p.farmer;
+    if (p.all_crops) p.all_crops.forEach(function(c){ cropSet.add(c); });
+    else if (p.crop && p.crop !== 'Non défini') cropSet.add(p.crop);
+
+    marker.addTo(map);
+    allMarkers.push(marker);
+});
+
+// Fit bounds if any markers
+if (allMarkers.length > 0) {
+    try { map.fitBounds(L.featureGroup(allMarkers).getBounds().pad(0.12)); } catch(e){}
+}
+
+// Build crop filter buttons
+var filterBar = document.getElementById('cropFilterBar');
+cropSet.forEach(function(crop) {
+    var btn = document.createElement('button');
+    btn.className = 'cal-filter-btn';
+    btn.textContent = crop;
+    btn.onclick = function(){ filterMarkers(crop, btn); };
+    filterBar.appendChild(btn);
+});
+
+function filterMarkers(crop, btn) {
+    document.querySelectorAll('#cropFilterBar .cal-filter-btn').forEach(function(b){ b.classList.remove('active'); });
+    btn.classList.add('active');
+    allMarkers.forEach(function(m) {
+        if (crop === 'all') {
+            m.addTo(map);
+        } else if (m._kind === 'province') {
+            m.addTo(map); // always show province markers
+        } else {
+            if (m._crop === crop) m.addTo(map); else map.removeLayer(m);
+        }
+    });
+}
+
+function focusProvince(province) {
+    var coords = PROVINCE_COORDS[province];
+    if (coords) map.setView(coords, 11);
+    allMarkers.forEach(function(m) {
+        if (m._province === province) { try { m.openPopup(); } catch(e){} }
+    });
+}
+
+// Farm table search
+document.getElementById('farmSearch').addEventListener('input', function() {
+    var q = this.value.toLowerCase();
+    document.querySelectorAll('#farmTable tbody tr').forEach(function(r) {
+        r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none';
+    });
+});
+</script>
+{% endblock %}

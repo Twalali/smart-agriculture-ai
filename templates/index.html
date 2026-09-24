@@ -1,105 +1,48 @@
 {% extends "base.html" %}
-
-{% block title %}Crop Analysis — Smart Agriculture AI{% endblock %}
-
+{% block title %}{{ t('nav.analyze') }} — Smart Agriculture AI{% endblock %}
 {% block content %}
 <section class="hero">
     <div class="hero-content">
-        <p class="hero-eyebrow">Precision Farming Intelligence</p>
-        <h1 class="hero-title">
-            Diagnose your<br />
-            <em>crops with AI</em>
-        </h1>
-        <p class="hero-body">
-            Upload a photograph of your crop and receive a detailed analysis
-            of plant health, disease detection, and agronomic recommendations.
-        </p>
+        <p class="hero-eyebrow">{{ t('index.eyebrow') }}</p>
+        <h1 class="hero-title">{{ t('index.title1') }}<br/><em>{{ t('index.title2') }}</em></h1>
+        <p class="hero-body">{{ t('index.body') }}</p>
     </div>
     <div class="hero-art" aria-hidden="true">
-        <div class="art-ring art-ring--1"></div>
-        <div class="art-ring art-ring--2"></div>
-        <div class="art-ring art-ring--3"></div>
+        <div class="art-ring art-ring--1"></div><div class="art-ring art-ring--2"></div><div class="art-ring art-ring--3"></div>
         <div class="art-grid"></div>
     </div>
 </section>
 
-<!-- WEATHER WIDGET -->
 <section class="weather-section">
     <div class="weather-search-bar">
         <div class="weather-search-inner">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2a7 7 0 0 1 7 7c0 5.25-7 13-7 13S5 14.25 5 9a7 7 0 0 1 7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
-            <input
-                type="text"
-                id="weatherInput"
-                class="weather-input"
-                placeholder="Detecting your location..."
-                autocomplete="off"
-            />
-            <button class="btn btn--primary weather-search-btn" id="weatherBtn">
-                Get Weather
-            </button>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a7 7 0 0 1 7 7c0 5.25-7 13-7 13S5 14.25 5 9a7 7 0 0 1 7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+            <input type="text" id="weatherInput" class="weather-input" placeholder="{{ t('weather.placeholder') }}" autocomplete="off"/>
+            <button class="btn btn--primary weather-search-btn" id="weatherBtn">{{ t('weather.button') }}</button>
         </div>
     </div>
-
-    <!-- Loading state -->
-    <div class="weather-loading" id="weatherLoading" hidden>
-        <div class="weather-spinner"></div>
-        <span>Fetching weather data...</span>
-    </div>
-
-    <!-- Error state -->
-    <div class="weather-error" id="weatherError" hidden></div>
-
-    <!-- Weather result -->
-    <div class="weather-result" id="weatherResult" hidden>
-
+    <div class="weather-loading" id="weatherLoading" style="display:none"><div class="weather-spinner"></div><span>...</span></div>
+    <div class="weather-error" id="weatherError" style="display:none"></div>
+    <div class="weather-result" id="weatherResult" style="display:none">
         <div class="weather-main-grid">
-            <!-- Current conditions card -->
             <div class="weather-card weather-card--main">
-                <div class="weather-location-row">
-                    <span class="weather-location-name" id="wLocation"></span>
-                    <span class="weather-location-country" id="wCountry"></span>
-                </div>
-                <div class="weather-temp-row">
-                    <span class="weather-temp" id="wTemp"></span>
-                    <span class="weather-condition" id="wCondition"></span>
-                </div>
+                <div class="weather-location-row"><span class="weather-location-name" id="wLocation"></span><span class="weather-location-country" id="wCountry"></span></div>
+                <div class="weather-temp-row"><span class="weather-temp" id="wTemp"></span><span class="weather-condition" id="wCondition"></span></div>
                 <div class="weather-stats-row">
-                    <div class="weather-stat">
-                        <span class="weather-stat-label">Humidity</span>
-                        <span class="weather-stat-value" id="wHumidity"></span>
-                    </div>
-                    <div class="weather-stat">
-                        <span class="weather-stat-label">Rain now</span>
-                        <span class="weather-stat-value" id="wRain"></span>
-                    </div>
-                    <div class="weather-stat">
-                        <span class="weather-stat-label">Wind</span>
-                        <span class="weather-stat-value" id="wWind"></span>
-                    </div>
+                    <div class="weather-stat"><span class="weather-stat-label">{{ t('weather.humidity') }}</span><span class="weather-stat-value" id="wHumidity"></span></div>
+                    <div class="weather-stat"><span class="weather-stat-label">{{ t('weather.rain_now') }}</span><span class="weather-stat-value" id="wRain"></span></div>
+                    <div class="weather-stat"><span class="weather-stat-label">{{ t('weather.wind') }}</span><span class="weather-stat-value" id="wWind"></span></div>
                 </div>
             </div>
-
-            <!-- 3-day forecast -->
-            <div class="weather-card weather-card--forecast">
-                <p class="weather-card-label">3-Day Forecast</p>
-                <div class="forecast-grid" id="wForecast"></div>
-            </div>
-
-            <!-- Farming risk -->
+            <div class="weather-card weather-card--forecast"><p class="weather-card-label">{{ t('weather.forecast') }}</p><div class="forecast-grid" id="wForecast"></div></div>
             <div class="weather-card weather-card--risk" id="wRiskCard">
-                <p class="weather-card-label">Disease Risk</p>
-                <div class="risk-indicator">
-                    <div class="risk-dot" id="wRiskDot"></div>
-                    <span class="risk-label" id="wRiskLabel"></span>
-                </div>
+                <p class="weather-card-label">{{ t('weather.disease_risk') }}</p>
+                <div class="risk-indicator"><div class="risk-dot" id="wRiskDot"></div><span class="risk-label" id="wRiskLabel"></span></div>
                 <p class="risk-description" id="wRiskDesc"></p>
             </div>
         </div>
-
-        <!-- Farming advice -->
         <div class="weather-advice-block" id="wAdviceBlock">
-            <p class="weather-advice-heading">Farming Advice Based on Current Weather</p>
+            <p class="weather-advice-heading">{{ t('weather.advice') }}</p>
             <ol class="weather-advice-list" id="wAdviceList"></ol>
         </div>
     </div>
@@ -107,66 +50,30 @@
 
 <section class="upload-section">
     <div class="upload-card">
-        <div class="upload-card-header">
-            <h2 class="upload-card-title">Submit Crop Image</h2>
-            <p class="upload-card-subtitle">Supported formats: PNG, JPG, JPEG, WEBP &mdash; Max 10 MB</p>
-        </div>
-
-        <form
-            class="upload-form"
-            id="uploadForm"
-            novalidate
-        >
-            <div class="drop-zone" id="dropZone" role="button" tabindex="0" aria-label="Drop zone for crop image">
+        <div class="upload-card-header"><h2 class="upload-card-title">{{ t('index.upload_title') }}</h2><p class="upload-card-subtitle">{{ t('index.upload_sub') }}</p></div>
+        <form class="upload-form" id="uploadForm" novalidate>
+            <div class="drop-zone" id="dropZone" role="button" tabindex="0">
                 <div class="drop-zone-inner">
-                    <div class="drop-zone-icon" aria-hidden="true">
-                        <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M20 4v24M10 14l10-10 10 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M6 30h28M6 36h28" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.4"/>
-                        </svg>
-                    </div>
-                    <p class="drop-zone-label">Drag and drop your image here</p>
-                    <p class="drop-zone-or">or</p>
-                    <label class="btn btn--outline" for="cropImageInput">Browse File</label>
-                    <input
-                        type="file"
-                        id="cropImageInput"
-                        name="crop_image"
-                        accept=".png,.jpg,.jpeg,.webp,.bmp,.tiff"
-                        class="visually-hidden"
-                        required
-                    />
+                    <div class="drop-zone-icon"><svg width="40" height="40" viewBox="0 0 40 40" fill="none"><path d="M20 4v24M10 14l10-10 10 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 30h28M6 36h28" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.4"/></svg></div>
+                    <p class="drop-zone-label">{{ t('index.drop_label') }}</p>
+                    <p class="drop-zone-or">{{ t('index.or') }}</p>
+                    <label class="btn btn--outline" for="cropImageInput">{{ t('index.browse') }}</label>
+                    <input type="file" id="cropImageInput" name="crop_image" accept=".png,.jpg,.jpeg,.webp,.bmp,.tiff" class="visually-hidden" required/>
                 </div>
-                <div class="drop-zone-preview" id="previewContainer" hidden>
-                    <img id="previewImg" src="" alt="Selected crop image preview" />
-                    <p id="previewName" class="preview-name"></p>
-                    <button type="button" class="preview-clear" id="clearFile" aria-label="Remove selected file">Remove</button>
+                <div class="drop-zone-preview" id="previewContainer" style="display:none">
+                    <img id="previewImg" src="" alt="Preview"/><p id="previewName" class="preview-name"></p>
+                    <button type="button" class="preview-clear" id="clearFile">&times;</button>
                 </div>
             </div>
-
             <button type="submit" class="btn btn--primary btn--full" id="submitBtn" disabled>
-                <span class="btn-label">Analyze Crop</span>
-                <span class="btn-arrow" aria-hidden="true">&rarr;</span>
+                <span class="btn-label">{{ t('index.analyze_btn') }}</span><span class="btn-arrow">&rarr;</span>
             </button>
         </form>
     </div>
-
     <div class="info-grid">
-        <div class="info-card">
-            <span class="info-card-number">01</span>
-            <h3 class="info-card-title">Upload</h3>
-            <p class="info-card-body">Photograph your crop in good lighting and upload the image directly from your device.</p>
-        </div>
-        <div class="info-card">
-            <span class="info-card-number">02</span>
-            <h3 class="info-card-title">Process</h3>
-            <p class="info-card-body">The system securely receives your image and sends it to the AI vision model for analysis.</p>
-        </div>
-        <div class="info-card">
-            <span class="info-card-number">03</span>
-            <h3 class="info-card-title">Results</h3>
-            <p class="info-card-body">Receive a structured report with diagnosis, confidence scores, and recommendations.</p>
-        </div>
+        <div class="info-card"><span class="info-card-number">01</span><h3 class="info-card-title">{{ t('index.step1_title') }}</h3><p class="info-card-body">{{ t('index.step1_body') }}</p></div>
+        <div class="info-card"><span class="info-card-number">02</span><h3 class="info-card-title">{{ t('index.step2_title') }}</h3><p class="info-card-body">{{ t('index.step2_body') }}</p></div>
+        <div class="info-card"><span class="info-card-number">03</span><h3 class="info-card-title">{{ t('index.step3_title') }}</h3><p class="info-card-body">{{ t('index.step3_body') }}</p></div>
     </div>
 </section>
 {% endblock %}

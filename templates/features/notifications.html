@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}Notifications{% endblock %}
+{% block content %}
+<section class="history-hero">
+    <div>
+        <h1 class="cal-title">Notifications</h1>
+        <p class="cal-subtitle">{% if unread > 0 %}{{ unread }} non lue(s){% else %}Tout lu{% endif %}</p>
+    </div>
+    {% if notifications %}
+    <form method="POST" action="{{ url_for('features.mark_all_read') }}">
+        <button class="btn btn--outline" style="font-size:0.8rem">Tout marquer comme lu</button>
+    </form>
+    {% endif %}
+</section>
+
+{% if notifications %}
+<div style="display:flex;flex-direction:column;gap:8px">
+{% for n in notifications %}
+<div style="background:var(--color-surface);border:1px solid {% if not n.is_read %}var(--color-border-strong){% else %}var(--color-border){% endif %};border-radius:var(--radius-lg);padding:16px 20px;display:flex;gap:14px;align-items:flex-start;{% if not n.is_read %}border-left:3px solid var(--color-green){% endif %}">
+    <div style="font-size:1.4rem;flex-shrink:0">
+        {% if n.type == 'disease_alert' %}🚨
+        {% elif n.type == 'forum_reply' %}💬
+        {% elif n.type == 'announcement' %}📢
+        {% elif n.type == 'market' %}💰
+        {% else %}🔔{% endif %}
+    </div>
+    <div style="flex:1;min-width:0">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:4px">
+            <p style="font-size:0.9rem;font-weight:{% if not n.is_read %}500{% else %}400{% endif %}">{{ n.title }}</p>
+            <span style="font-family:var(--font-mono);font-size:0.62rem;color:var(--color-text-faint);white-space:nowrap">{{ n.created_at.strftime('%d %b %H:%M') }}</span>
+        </div>
+        {% if n.body %}<p style="font-size:0.82rem;color:var(--color-text-muted)">{{ n.body }}</p>{% endif %}
+        <div style="display:flex;gap:10px;margin-top:8px;align-items:center">
+            {% if n.link %}
+            <form method="POST" action="{{ url_for('features.mark_notification_read', nid=n.id) }}">
+                <button class="btn btn--outline" style="padding:4px 12px;font-size:0.75rem">Voir &rarr;</button>
+            </form>
+            {% endif %}
+            {% if not n.is_read %}
+            <form method="POST" action="{{ url_for('features.mark_notification_read', nid=n.id) }}">
+                <button class="btn btn--outline" style="padding:4px 12px;font-size:0.75rem;color:var(--color-text-muted)">Marquer lu</button>
+            </form>
+            {% else %}
+            <span style="font-family:var(--font-mono);font-size:0.62rem;color:var(--color-text-faint)">✓ Lu</span>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endfor %}
+</div>
+{% else %}
+<div class="history-empty">
+    <div style="font-size:3rem">🔔</div>
+    <p class="history-empty-title">Pas encore de notifications</p>
+    <p class="history-empty-body">Vous serez alerté des maladies dans votre province, des réponses à vos sujets du forum, et des nouveaux prix du marché.</p>
+</div>
+{% endif %}
+
+{% if current_user.role in ['admin','government'] %}
+<div class="admin-data-card" style="margin-top:32px;padding:24px">
+    <p class="admin-data-title">Envoyer une Annonce à Tous les Agriculteurs</p>
+    <div class="auth-form" id="announceForm">
+        <div class="form-group"><label class="form-label">Titre</label><input type="text" id="announceTitle" class="form-input" placeholder="Ex: Alerte semences saison B 2025"/></div>
+        <div class="form-group"><label class="form-label">Message</label><textarea id="announceBody" class="form-input" rows="3" placeholder="Détails de l'annonce..."></textarea></div>
+        <div class="form-group"><label class="form-label">Lien (optionnel)</label><input type="text" id="announceLink" class="form-input" placeholder="/market ou /calendar"/></div>
+        <button class="btn btn--primary" onclick="sendAnnouncement()">Envoyer à Tous</button>
+        <p id="announceResult" style="display:none;font-family:var(--font-mono);font-size:0.75rem;margin-top:8px"></p>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script>
+function sendAnnouncement() {
+    var title = document.getElementById('announceTitle').value.trim();
+    var body  = document.getElementById('announceBody').value.trim();
+    var link  = document.getElementById('announceLink').value.trim();
+    var res   = document.getElementById('announceResult');
+    if (!title) { alert('Titre requis'); return; }
+    fetch('/admin/announce', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({title: title, body: body, link: link || null})
+    }).then(function(r){ return r.json(); })
+    .then(function(d){
+        res.style.display = 'block';
+        res.style.color = 'var(--color-green)';
+        res.textContent = 'Annonce envoyee a ' + d.notified + ' agriculteur(s).';
+        document.getElementById('announceTitle').value = '';
+        document.getElementById('announceBody').value = '';
+    }).catch(function(){
+        res.style.display = 'block';
+        res.style.color = '#f87171';
+        res.textContent = 'Erreur lors de l envoi.';
+    });
+}
+</script>
+{% endblock %}

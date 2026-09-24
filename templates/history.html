@@ -1,69 +1,22 @@
 {% extends "base.html" %}
-{% block title %}My Farm History — Smart Agriculture AI{% endblock %}
+{% block title %}{{ t('nav.history') }}{% endblock %}
 {% block content %}
-<section class="history-hero">
-    <div>
-        <p class="hero-eyebrow">Farm Records</p>
-        <h1 class="cal-title">My Analysis History</h1>
-        <p class="cal-subtitle">{{ analyses|length }} analysis record{% if analyses|length != 1 %}s{% endif %} saved</p>
-    </div>
-    <a href="{{ url_for('index') }}" class="btn btn--primary">New Analysis</a>
-</section>
-
+<section class="history-hero"><div><h1 class="cal-title">{{ t('nav.history') }}</h1><p class="cal-subtitle">{{ analyses|length }}</p></div><a href="{{ url_for('index') }}" class="btn btn--primary">{{ t('nav.analyze') }}</a></section>
 {% if analyses %}
 <div class="history-grid">
-    {% for a in analyses %}
-    <div class="history-card">
-        <div class="history-card-img-wrap">
-            <img src="{{ url_for('static', filename='uploads/' + a.filename) }}"
-                 alt="{{ a.crop_type }}" class="history-card-img"
-                 onerror="this.src='';this.parentElement.classList.add('history-img-missing')" />
-            <span class="history-card-date">{{ a.created_at.strftime('%d %b %Y') }}</span>
-        </div>
-        <div class="history-card-body">
-            <div class="history-card-top">
-                <span class="history-crop">{{ a.crop_type or 'Unknown' }}</span>
-                <span class="status-pill status-pill--{{ a.overall_status or 'unknown' }}">
-                    {{ (a.overall_status or 'unknown') | replace('_',' ') | title }}
-                </span>
-            </div>
-            <div class="history-score-row">
-                <span class="history-score-label">Health Score</span>
-                <span class="history-score-val">{{ (a.health_score or 0) | int }}/100</span>
-            </div>
-            <div class="history-score-bar">
-                <div class="history-score-fill history-score-fill--{{ a.overall_status or 'unknown' }}"
-                     style="width:{{ (a.health_score or 0) | int }}%"></div>
-            </div>
-            {% if a.detections_list %}
-            <div class="history-diseases">
-                {% for d in a.detections_list[:2] %}
-                <span class="cal-risk-tag">{{ d.name }}</span>
-                {% endfor %}
-                {% if a.detections_list|length > 2 %}
-                <span class="cal-risk-tag">+{{ a.detections_list|length - 2 }} more</span>
-                {% endif %}
-            </div>
-            {% endif %}
-            {% if a.province %}
-            <p class="history-location">{{ a.province }}{% if a.commune %}, {{ a.commune }}{% endif %}</p>
-            {% endif %}
-            <div class="history-actions">
-                <a href="{{ url_for('history_detail', analysis_id=a.id) }}" class="btn btn--outline" style="font-size:0.78rem;padding:6px 14px;">View Report</a>
-                <form method="POST" action="{{ url_for('history_delete', analysis_id=a.id) }}"
-                      onsubmit="return confirm('Delete this analysis?');" style="display:inline;">
-                    <button type="submit" class="history-delete-btn">Delete</button>
-                </form>
-            </div>
-        </div>
+{% for a in analyses %}
+<div class="history-card">
+    <div class="history-card-img-wrap"><img src="{{ url_for('static',filename='uploads/'+a.filename) }}" class="history-card-img" onerror="this.style.display='none'"/>
+    <div class="history-card-img-overlay"><span class="status-pill status-pill--{{ a.overall_status }}">{{ t('status.'+(a.overall_status or 'unknown')) }}</span></div>
+    <span class="history-card-date">{{ a.created_at.strftime('%d %b %Y') }}</span></div>
+    <div class="history-card-body">
+        <span class="history-crop">{{ a.crop_type }}</span>
+        <div class="history-score-bar"><div class="history-score-fill history-score-fill--{{ a.overall_status }}" style="width:{{ (a.health_score or 0)|int }}%"></div></div>
+        <div class="history-actions"><a href="{{ url_for('history_detail',analysis_id=a.id) }}" class="btn btn--outline" style="flex:1;text-align:center">{{ t('result.title') }}</a>
+        <form method="POST" action="{{ url_for('history_delete',analysis_id=a.id) }}" onsubmit="return confirm('Delete?');"><button class="history-delete-btn">&times;</button></form></div>
     </div>
-    {% endfor %}
 </div>
-{% else %}
-<div class="history-empty">
-    <p class="history-empty-title">No analyses yet</p>
-    <p class="history-empty-body">Upload your first crop photo to start building your farm history.</p>
-    <a href="{{ url_for('index') }}" class="btn btn--primary">Analyse a Crop</a>
+{% endfor %}
 </div>
-{% endif %}
+{% else %}<div class="history-empty"><p class="history-empty-title">{{ t('farm.no_farms_title') }}</p><a href="{{ url_for('index') }}" class="btn btn--primary">{{ t('nav.analyze') }}</a></div>{% endif %}
 {% endblock %}

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}{{ farm.name }}{% endblock %}
+{% block content %}
+<section class="history-hero">
+    <div><h1 class="cal-title">{{ farm.name }}</h1><p class="cal-subtitle">{{ farm.total_fields }} {{ t('farm.fields') }} &bull; {{ "%.2f"|format(farm.total_area_ha) }} ha</p></div>
+    <div style="display:flex;gap:10px">
+        <a href="{{ url_for('farm.field_map',farm_id=farm.id) }}" class="btn btn--primary">{{ t('farm.add_field') }}</a>
+        <form method="POST" action="{{ url_for('farm.farm_delete',farm_id=farm.id) }}" onsubmit="return confirm('Delete?');"><button class="btn btn--outline" style="color:#f87171">{{ t('farm.delete_farm') }}</button></form>
+    </div>
+</section>
+{% if farm.fields %}
+<div class="farm-fields-grid">
+{% for field in farm.fields %}
+<div class="farm-field-card">
+    <div class="farm-field-header"><h3 class="farm-field-name">{{ field.name }}</h3><div class="farm-field-area"><span class="farm-field-area-ha">{{ "%.2f"|format(field.area_ha or 0) }} ha</span></div></div>
+    {% if field.crop %}<span class="about-crop-tag">{{ field.crop }}</span>{% endif %}
+    <div class="farm-field-calcs">
+        {% if field.seed_required %}<div class="farm-calc-item"><span class="farm-calc-label">Seed</span><span class="farm-calc-val">{{ field.seed_required|int }} kg</span></div>{% endif %}
+        {% if field.expected_yield %}<div class="farm-calc-item"><span class="farm-calc-label">Yield</span><span class="farm-calc-val">{{ "%.1f"|format(field.expected_yield) }} t</span></div>{% endif %}
+        {% if field.expected_revenue %}<div class="farm-calc-item"><span class="farm-calc-label">Revenue</span><span class="farm-calc-val" style="color:var(--color-green)">{{ "{:,}".format(field.expected_revenue|int) }} BIF</span></div>{% endif %}
+    </div>
+    <div class="farm-field-actions"><a href="{{ url_for('farm.field_detail',field_id=field.id) }}" class="btn btn--outline" style="flex:1;text-align:center">{{ t('result.title') }}</a>
+    <form method="POST" action="{{ url_for('farm.field_delete',field_id=field.id) }}" onsubmit="return confirm('Delete?');"><button class="history-delete-btn">&times;</button></form></div>
+</div>
+{% endfor %}
+</div>
+{% else %}<div class="history-empty"><a href="{{ url_for('farm.field_map',farm_id=farm.id) }}" class="btn btn--primary">{{ t('farm.add_field') }}</a></div>{% endif %}
+{% endblock %}

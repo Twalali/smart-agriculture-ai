@@ -1,18 +1,38 @@
-# Python
+# Database — never commit
+agri.db
+instance/
+*.db
+*.sqlite
+
+# API keys / environment
+.env
+*.env
+
+# Python cache
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 
-# Virtual Environment
+# Virtual environment
 venv/
-.env
+env/
+.venv/
 
-# VS Code
+# Farmer photo uploads — private data
+static/uploads/
+
+# Junk folder (from old build error)
+{static/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
 .vscode/
+.idea/
+*.swp
 
-# Uploads
-static/uploads/*
-
-# Environment variables
-.env
+# Logs
+*.log

@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block title %}Forum — Smart Agriculture AI{% endblock %}
+{% block content %}
+<section class="history-hero">
+    <div>
+        <h1 class="cal-title">Forum Agricole</h1>
+        <p class="cal-subtitle">{{ total_posts }} sujets &nbsp;&bull;&nbsp; {{ total_replies }} réponses</p>
+    </div>
+    {% if current_user.is_authenticated %}
+    <a href="{{ url_for('community.forum_new') }}" class="btn btn--primary">+ Nouveau Sujet</a>
+    {% else %}
+    <a href="{{ url_for('auth_login') }}" class="btn btn--outline">Connexion pour poster</a>
+    {% endif %}
+</section>
+
+<div style="display:grid;grid-template-columns:1fr 260px;gap:24px;align-items:start">
+    <div>
+        <!-- Search bar -->
+        <form method="GET" style="display:flex;gap:10px;margin-bottom:20px">
+            <input type="hidden" name="cat" value="{{ current_cat }}"/>
+            <input type="text" name="q" value="{{ q }}" class="form-input" placeholder="Rechercher dans le forum..." style="flex:1"/>
+            <button type="submit" class="btn btn--outline">Rechercher</button>
+        </form>
+
+        <!-- Category filter -->
+        <div class="cal-filter-bar" style="margin-bottom:20px">
+            <a href="{{ url_for('community.forum') }}" class="cal-filter-btn {% if current_cat=='all' %}active{% endif %}">Tous</a>
+            {% for cat_id, cat_label in categories %}
+            <a href="{{ url_for('community.forum', cat=cat_id) }}" class="cal-filter-btn {% if current_cat==cat_id %}active{% endif %}">{{ cat_label.split('/')[0].strip() }}</a>
+            {% endfor %}
+        </div>
+
+        <!-- Post list -->
+        {% if posts %}
+        <div style="display:flex;flex-direction:column;gap:10px">
+        {% for post in posts %}
+        <a href="{{ url_for('community.forum_post', post_id=post.id) }}" style="text-decoration:none;display:block">
+            <div class="forum-post-card {% if post.is_pinned %}forum-post-card--pinned{% endif %}">
+                <div class="forum-post-top">
+                    <div class="forum-post-left">
+                        {% if post.is_pinned %}<span class="forum-badge forum-badge--pinned">📌 Épinglé</span>{% endif %}
+                        <h2 class="forum-post-title">{{ post.title }}</h2>
+                        <p class="forum-post-preview">{{ post.body[:120] }}{% if post.body|length > 120 %}…{% endif %}</p>
+                        <div class="forum-post-meta">
+                            <span class="forum-author-chip">
+                                <span class="forum-avatar">{{ post.author.username[0].upper() }}</span>
+                                {{ post.author.username }}
+                                {% if post.author.is_verified_professional %}
+                                <span class="verified-badge" title="Agronome vérifié">✓</span>
+                                {% endif %}
+                                {% if post.author.role in ['admin','government'] %}
+                                <span class="gov-badge">GOV</span>
+                                {% endif %}
+                            </span>
+                            {% if post.crop_tag %}<span class="about-crop-tag" style="font-size:0.65rem">{{ post.crop_tag }}</span>{% endif %}
+                            <span style="font-family:var(--font-mono);font-size:0.65rem;color:var(--color-text-faint)">{{ post.created_at.strftime('%d %b %Y') }}</span>
+                        </div>
+                    </div>
+                    <div class="forum-post-stats">
+                        <span class="forum-stat-num">{{ post.reply_count }}</span>
+                        <span class="forum-stat-label">réponses</span>
+                    </div>
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if total_pages > 1 %}
+        <div style="display:flex;gap:8px;justify-content:center;margin-top:24px;flex-wrap:wrap">
+            {% for p in range(1, total_pages+1) %}
+            <a href="{{ url_for('community.forum', cat=current_cat, q=q, page=p) }}"
+               class="btn {% if p==page %}btn--primary{% else %}btn--outline{% endif %}"
+               style="padding:6px 14px;font-size:0.78rem">{{ p }}</a>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="history-empty">
+            <p class="history-empty-title">Pas encore de sujets</p>
+            <p class="history-empty-body">Soyez le premier à poser une question !</p>
+            {% if current_user.is_authenticated %}
+            <a href="{{ url_for('community.forum_new') }}" class="btn btn--primary">+ Nouveau Sujet</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Sidebar -->
+    <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="admin-data-card" style="padding:20px">
+            <p class="admin-data-title">Agronomes Vérifiés</p>
+            {% if professionals %}
+            <div style="display:flex;flex-direction:column;gap:10px">
+            {% for pro in professionals %}
+            <div style="display:flex;align-items:center;justify-content:space-between">
+                <div style="display:flex;align-items:center;gap:8px">
+                    <span class="forum-avatar forum-avatar--pro">{{ pro.username[0].upper() }}</span>
+                    <div>
+                        <p style="font-size:0.83rem;font-weight:500">{{ pro.username }}</p>
+                        <p style="font-family:var(--font-mono);font-size:0.62rem;color:var(--color-text-muted)">{{ pro.province or pro.role }}</p>
+                    </div>
+                </div>
+                {% if current_user.is_authenticated and current_user.id != pro.id %}
+                <a href="{{ url_for('community.conversation', partner_id=pro.id) }}" class="btn btn--outline" style="padding:4px 10px;font-size:0.72rem">Message</a>
+                {% endif %}
+            </div>
+            {% endfor %}
+            </div>
+            {% else %}
+            <p style="font-size:0.8rem;color:var(--color-text-faint)">Aucun agronome vérifié pour l'instant.</p>
+            {% endif %}
+        </div>
+
+        <div class="admin-data-card" style="padding:20px">
+            <p class="admin-data-title">Règles du Forum</p>
+            <ol style="list-style:decimal;padding-left:16px;font-size:0.8rem;color:var(--color-text-muted);display:flex;flex-direction:column;gap:6px">
+                <li>Soyez respectueux envers tous.</li>
+                <li>Posez des questions claires avec les détails de votre culture.</li>
+                <li>Partagez vos expériences pour aider les autres.</li>
+                <li>Signalez les fausses informations.</li>
+            </ol>
+        </div>
+    </div>
+</div>
+{% endblock %}

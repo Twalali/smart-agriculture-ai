@@ -1,52 +1,37 @@
-"""
-auth.py — Authentication helpers and route decorators.
-"""
-
 from functools import wraps
 from flask import redirect, url_for, flash
 from flask_login import current_user
 
-
-def farmer_required(f):
+def login_required_custom(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         if not current_user.is_authenticated:
-            flash("Please log in to access this page.", "error")
+            flash("Please log in.", "error")
             return redirect(url_for("auth_login"))
         return f(*args, **kwargs)
     return decorated
-
 
 def admin_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        if not current_user.is_authenticated:
-            flash("Please log in.", "error")
-            return redirect(url_for("auth_login"))
-        if not current_user.is_admin:
-            flash("Access denied. Admin only.", "error")
+        if not current_user.is_authenticated or not current_user.is_admin:
+            flash("Admin access required.", "error")
             return redirect(url_for("index"))
         return f(*args, **kwargs)
     return decorated
-
 
 def dashboard_required(f):
-    """Admin or Government access."""
     @wraps(f)
     def decorated(*args, **kwargs):
-        if not current_user.is_authenticated:
-            flash("Please log in.", "error")
-            return redirect(url_for("auth_login"))
-        if current_user.role not in ("admin", "government"):
-            flash("Access denied.", "error")
+        if not current_user.is_authenticated or current_user.role not in ("admin","government"):
+            flash("Dashboard access required.", "error")
             return redirect(url_for("index"))
         return f(*args, **kwargs)
     return decorated
 
-
 BURUNDI_PROVINCES = [
-    "Bubanza", "Bujumbura Mairie", "Bujumbura Rural", "Bururi",
-    "Cankuzo", "Cibitoke", "Gitega", "Karuzi", "Kayanza",
-    "Kirundo", "Makamba", "Muramvya", "Muyinga", "Mwaro",
-    "Ngozi", "Rumonge", "Rutana", "Ruyigi",
+    "Bubanza","Bujumbura Mairie","Bujumbura Rural","Bururi",
+    "Cankuzo","Cibitoke","Gitega","Karuzi","Kayanza",
+    "Kirundo","Makamba","Muramvya","Muyinga","Mwaro",
+    "Ngozi","Rumonge","Rutana","Ruyigi",
 ]

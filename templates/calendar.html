@@ -1,149 +1,43 @@
 {% extends "base.html" %}
-{% block title %}Crop Calendar — Smart Agriculture AI{% endblock %}
-
+{% block title %}{{ t('nav.calendar') }}{% endblock %}
 {% block content %}
 <section class="cal-hero">
-    <div>
-        <p class="hero-eyebrow">Burundi Agricultural Calendar</p>
-        <h1 class="cal-title">Crop Planting &amp; Harvest Guide</h1>
-        <p class="cal-subtitle">
-            Season A: September – January &nbsp;|&nbsp; Season B: February – June
-        </p>
-    </div>
-    <div class="cal-month-badge">
-        <span class="cal-month-label">Current Month</span>
-        <span class="cal-month-name">{{ month_name }}</span>
-    </div>
+    <div><h1 class="cal-title">{{ t('nav.calendar') }}</h1><p class="cal-subtitle">{{ t('season.a') }} &nbsp;|&nbsp; {{ t('season.b') }} &nbsp;|&nbsp; {{ t('season.c') }}</p></div>
+    <div class="cal-month-badge"><span class="cal-month-name">{{ month_name }}</span></div>
 </section>
-
-<!-- This month's activities -->
 {% if activities %}
-<section class="cal-now">
-    <p class="cal-section-heading">What to do in {{ month_name }}</p>
-    <div class="cal-now-grid">
-        {% for act in activities %}
-        <div class="cal-now-card cal-now-card--{{ act.event | lower }}">
-            <div class="cal-now-top">
-                <span class="cal-now-crop">{{ act.crop }}</span>
-                <span class="cal-now-local">{{ act.local_name }}</span>
-                <span class="cal-event-pill cal-event-pill--{{ act.event | lower }}">{{ act.event }}</span>
-            </div>
-            <p class="cal-now-note">{{ act.note }}</p>
-        </div>
-        {% endfor %}
-    </div>
-</section>
-{% endif %}
-
-<!-- Filter tabs -->
-<div class="cal-filter-bar">
-    <button class="cal-filter-btn active" data-cat="all">All Crops</button>
-    {% for cat in categories %}
-    <button class="cal-filter-btn" data-cat="{{ cat }}">{{ cat }}</button>
-    {% endfor %}
+<section class="cal-now"><div class="cal-now-grid">
+{% for act in activities %}
+<div class="cal-now-card cal-now-card--{{ act.event|lower }}">
+    <div class="cal-now-top"><span class="cal-now-crop">{{ act.crop }}</span><span class="cal-now-local">{{ act.local_name }}</span><span class="cal-event-pill cal-event-pill--{{ act.event|lower }}">{{ act.event }}</span></div>
+    <p class="cal-now-note">{{ act.note }}</p>
 </div>
-
-<!-- Crop cards -->
+{% endfor %}
+</div></section>
+{% endif %}
+<div class="cal-filter-bar"><button class="cal-filter-btn active" data-cat="all">All</button>{% for cat in categories %}<button class="cal-filter-btn" data-cat="{{ cat }}">{{ cat }}</button>{% endfor %}</div>
 <div class="cal-crop-grid" id="cropGrid">
-    {% for crop in crops %}
-    <div class="cal-crop-card" data-cat="{{ crop.category }}">
-
-        <div class="cal-crop-header">
-            <div>
-                <h2 class="cal-crop-name">{{ crop.name }}</h2>
-                <p class="cal-crop-local">{{ crop.local_name }} &mdash; {{ crop.category }}</p>
-            </div>
-            <span class="cal-duration">{{ crop.duration_days }}d</span>
-        </div>
-
-        <p class="cal-crop-desc">{{ crop.description }}</p>
-
-        <!-- Month timeline -->
-        <div class="cal-timeline">
-            {% for m in range(1, 13) %}
-            <div class="cal-timeline-month
-                {%- for ev in crop.events %}{% if ev.month == m %} cal-tm--{{ ev.label | lower }}{% endif %}{% endfor %}
-                " title="
-                {%- for ev in crop.events %}{% if ev.month == m %}{{ ev.label }}: {{ ev.note }}{% endif %}{% endfor -%}
-                {% if m == current_month %} (Current month){% endif %}
-                ">
-                <span class="cal-tm-label">{{ month_short[m] }}</span>
-                {% for ev in crop.events %}{% if ev.month == m %}
-                <span class="cal-tm-dot"></span>
-                {% endif %}{% endfor %}
-                {% if m == current_month %}<span class="cal-tm-now"></span>{% endif %}
-            </div>
-            {% endfor %}
-        </div>
-
-        <!-- Events list -->
-        <div class="cal-events">
-            {% for ev in crop.events | sort(attribute='month') %}
-            <div class="cal-event-row">
-                <span class="cal-event-month">{{ month_short[ev.month] }}</span>
-                <span class="cal-event-pill cal-event-pill--{{ ev.label | lower }}">{{ ev.label }}</span>
-                <span class="cal-event-note">{{ ev.note }}</span>
-            </div>
-            {% endfor %}
-        </div>
-
-        <!-- Conditions -->
-        <div class="cal-conditions">
-            <div class="cal-cond-item">
-                <span class="cal-cond-key">Temperature</span>
-                <span class="cal-cond-val">{{ crop.ideal_temp }}</span>
-            </div>
-            <div class="cal-cond-item">
-                <span class="cal-cond-key">Rainfall</span>
-                <span class="cal-cond-val">{{ crop.ideal_rain }}</span>
-            </div>
-            <div class="cal-cond-item">
-                <span class="cal-cond-key">Seasons</span>
-                <span class="cal-cond-val">{{ crop.seasons | join(", ") }}</span>
-            </div>
-        </div>
-
-        <!-- Disease risks -->
-        <div class="cal-risks">
-            <p class="cal-risks-label">Disease Risks</p>
-            <div class="cal-risks-list">
-                {% for d in crop.disease_risks %}
-                <span class="cal-risk-tag">{{ d }}</span>
-                {% endfor %}
-            </div>
-        </div>
-
-        <!-- Tips -->
-        <div class="cal-tips">
-            <p class="cal-tips-label">Key Tips</p>
-            <ol class="cal-tips-list">
-                {% for tip in crop.tips %}
-                <li class="cal-tip-item">{{ tip }}</li>
-                {% endfor %}
-            </ol>
-        </div>
-
-    </div>
-    {% endfor %}
+{% for crop in crops %}
+<div class="cal-crop-card" data-cat="{{ crop.category }}">
+    <div class="cal-crop-header"><div><h2 class="cal-crop-name">{{ crop.name }}</h2><p class="cal-crop-local">{{ crop.local_name }} — {{ crop.category }}</p></div><span class="cal-duration">{{ crop.duration_days }}d</span></div>
+    <p class="cal-crop-desc">{{ crop.description }}</p>
+    <div class="cal-events">{% for ev in crop.events|sort(attribute='month') %}<div class="cal-event-row"><span class="cal-event-month">{{ month_short[ev.month] }}</span><span class="cal-event-pill cal-event-pill--{{ ev.label|lower }}">{{ ev.label }}</span><span class="cal-event-note">{{ ev.note }}</span></div>{% endfor %}</div>
+    <div class="cal-conditions"><div class="cal-cond-item"><span class="cal-cond-key">Temp</span><span class="cal-cond-val">{{ crop.ideal_temp }}</span></div><div class="cal-cond-item"><span class="cal-cond-key">Rain</span><span class="cal-cond-val">{{ crop.ideal_rain }}</span></div><div class="cal-cond-item"><span class="cal-cond-key">Seasons</span><span class="cal-cond-val">{{ crop.seasons|join(", ") }}</span></div></div>
+    <div class="cal-risks"><div class="cal-risks-list">{% for d in crop.disease_risks %}<span class="cal-risk-tag">{{ d }}</span>{% endfor %}</div></div>
+    <div class="cal-tips"><ol class="cal-tips-list">{% for tip in crop.tips %}<li class="cal-tip-item">{{ tip }}</li>{% endfor %}</ol></div>
+</div>
+{% endfor %}
 </div>
 {% endblock %}
-
 {% block scripts %}
 <script>
-(function () {
-    const btns = document.querySelectorAll(".cal-filter-btn");
-    const cards = document.querySelectorAll(".cal-crop-card");
-
-    btns.forEach(function (btn) {
-        btn.addEventListener("click", function () {
-            btns.forEach(function (b) { b.classList.remove("active"); });
-            btn.classList.add("active");
-            const cat = btn.dataset.cat;
-            cards.forEach(function (card) {
-                card.style.display = (cat === "all" || card.dataset.cat === cat) ? "" : "none";
-            });
-        });
-    });
+(function(){
+    var btns=document.querySelectorAll(".cal-filter-btn"), cards=document.querySelectorAll(".cal-crop-card");
+    btns.forEach(function(btn){btn.addEventListener("click",function(){
+        btns.forEach(function(b){b.classList.remove("active")});btn.classList.add("active");
+        var cat=btn.dataset.cat;
+        cards.forEach(function(c){c.style.display=(cat==="all"||c.dataset.cat===cat)?"":"none";});
+    });});
 })();
 </script>
 {% endblock %}

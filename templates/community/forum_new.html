@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Nouveau Sujet — Forum{% endblock %}
+{% block content %}
+<div class="auth-page"><div class="auth-card auth-card--wide">
+    <div class="auth-card-header">
+        <h1 class="auth-title">Nouveau Sujet</h1>
+        <p class="auth-subtitle">Posez votre question ou partagez votre expérience</p>
+    </div>
+    <form method="POST" class="auth-form">
+        <div class="form-group">
+            <label class="form-label">Titre <span class="form-required">*</span></label>
+            <input type="text" name="title" class="form-input" required autofocus maxlength="200"
+                   placeholder="Ex: Mon haricot a des taches jaunes — que faire?"/>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Catégorie</label>
+                <select name="category" class="form-input form-select">
+                    {% for cat_id, cat_label in categories %}
+                    <option value="{{ cat_id }}">{{ cat_label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Culture concernée (optionnel)</label>
+                <input type="text" name="crop_tag" class="form-input"
+                       placeholder="Ex: Haricot, Maïs, Café..."/>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Message <span class="form-required">*</span></label>
+            <textarea name="body" class="form-input" required rows="8"
+                      placeholder="Décrivez votre situation en détail : province, type de sol, météo récente, symptômes observés..."></textarea>
+        </div>
+        <div style="display:flex;gap:12px">
+            <button type="submit" class="btn btn--primary">Publier le Sujet</button>
+            <a href="{{ url_for('community.forum') }}" class="btn btn--outline">Annuler</a>
+        </div>
+    </form>
+</div></div>
+{% endblock %}

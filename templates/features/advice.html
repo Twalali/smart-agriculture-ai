@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}Conseils de Plantation IA{% endblock %}
+{% block content %}
+<section class="history-hero">
+    <div>
+        <h1 class="cal-title">Conseils de Plantation IA</h1>
+        <p class="cal-subtitle">Recommandations personnalisées basées sur la météo, la saison et votre culture</p>
+    </div>
+</section>
+
+<div style="display:grid;grid-template-columns:340px 1fr;gap:24px;align-items:start">
+    <!-- Form -->
+    <div class="admin-data-card" style="padding:24px">
+        <p class="admin-data-title">Votre Situation</p>
+        <form method="POST" class="auth-form">
+            <div class="form-group">
+                <label class="form-label">Culture <span class="form-required">*</span></label>
+                <input type="text" name="crop" class="form-input" required
+                       value="{{ selected_crop }}" list="cropAdviceSuggestions"
+                       placeholder="Ex: Common Bean, Maize..."/>
+                <datalist id="cropAdviceSuggestions">
+                    {% for c in crops %}
+                    <option value="{{ c.name }}">{{ c.name }} ({{ c.local_name }})</option>
+                    {% endfor %}
+                </datalist>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Province <span class="form-required">*</span></label>
+                <select name="province" class="form-input form-select" required>
+                    <option value="">Sélectionner...</option>
+                    {% for p in provinces %}
+                    <option value="{{ p }}" {% if p==selected_province %}selected{% endif %}>{{ p }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Saison Prévue</label>
+                <select name="season" class="form-input form-select">
+                    <option value="">Saison actuelle (automatique)</option>
+                    <option value="A" {% if selected_season=='A' %}selected{% endif %}>Saison A — Agatasi (Sep–Jan)</option>
+                    <option value="B" {% if selected_season=='B' %}selected{% endif %}>Saison B — Principale (Fév–Jun)</option>
+                    <option value="C" {% if selected_season=='C' %}selected{% endif %}>Saison C — Marais (Jun–Oct)</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn--primary btn--full" id="adviceBtn">
+                Obtenir les Conseils IA
+            </button>
+        </form>
+
+        <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--color-border)">
+            <p style="font-family:var(--font-mono);font-size:0.62rem;text-transform:uppercase;color:var(--color-text-faint);margin-bottom:8px">Comment ça marche</p>
+            <p style="font-size:0.78rem;color:var(--color-text-muted);line-height:1.6">
+                L'IA analyse la météo actuelle de votre province, le calendrier agricole de Burundi, et les meilleures pratiques agronomiques pour vous donner une recommandation personnalisée.
+            </p>
+        </div>
+    </div>
+
+    <!-- Result -->
+    <div>
+        {% if advice %}
+        <div style="background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-lg);overflow:hidden">
+            <div style="padding:16px 20px;border-bottom:1px solid var(--color-border);background:var(--color-surface-2);display:flex;justify-content:space-between;align-items:center">
+                <div>
+                    <p style="font-weight:500">{{ advice.crop }} — {{ advice.province }}</p>
+                    <p style="font-family:var(--font-mono);font-size:0.65rem;color:var(--color-text-muted)">Saison {{ advice.season }} &bull; {{ advice.month }} &bull; Généré {{ advice.generated_at }}</p>
+                </div>
+                {% if advice.weather %}
+                <div style="text-align:right">
+                    <p style="font-family:var(--font-display);font-size:1.4rem;color:var(--color-green)">{{ advice.weather.temperature }}°C</p>
+                    <p style="font-family:var(--font-mono);font-size:0.65rem;color:var(--color-text-muted)">{{ advice.weather.condition }}</p>
+                </div>
+                {% endif %}
+            </div>
+            <div style="padding:24px">
+                {% if advice.weather %}
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px">
+                    <div class="calc-result-item"><span class="calc-r-label">Humidité</span><span class="calc-r-val" style="font-size:0.9rem">{{ advice.weather.humidity }}%</span></div>
+                    <div class="calc-result-item"><span class="calc-r-label">Pluie 3j</span><span class="calc-r-val" style="font-size:0.9rem">{{ advice.weather.rain_3days|sum|round(1) }} mm</span></div>
+                    <div class="calc-result-item"><span class="calc-r-label">Risque</span><span class="calc-r-val" style="font-size:0.9rem;color:{% if advice.weather.farming_risk=='high' %}#f87171{% elif advice.weather.farming_risk=='medium' %}var(--color-amber){% else %}var(--color-green){% endif %}">{{ advice.weather.farming_risk|upper }}</span></div>
+                </div>
+                {% endif %}
+                <div style="font-size:0.9rem;line-height:1.8;white-space:pre-wrap;color:var(--color-text)">{{ advice.text }}</div>
+            </div>
+        </div>
+        {% else %}
+        <div class="history-empty" style="min-height:300px">
+            <div style="font-size:3rem"></div>
+            <p class="history-empty-title">Conseils Personnalisés</p>
+            <p class="history-empty-body">Sélectionnez votre culture et province pour recevoir des conseils de plantation basés sur la météo actuelle et le calendrier agricole.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+document.querySelector('form').addEventListener('submit', function(){
+    var btn = document.getElementById('adviceBtn');
+    btn.textContent = 'Analyse en cours...';
+    btn.disabled = true;
+});
+</script>
+{% endblock %}
